@@ -1,6 +1,7 @@
 import { PopupWidget } from "react-calendly";
 import "./App.css";
 import insta from "./assets/insta.svg";
+import facebook from "./assets/facebook.svg";
 
 function App() {
   return (
@@ -13,17 +14,29 @@ function App() {
             rel="noopener noreferrer"
             className="social-link"
           >
-            <img src={insta} alt="Instagram" className="social-icon" />
-            de_car_guy_puncham
+            <img
+              src={insta}
+              height={"20px"}
+              width={"20px"}
+              alt="Instagram"
+              className="social-icon"
+            />
+            <span>de_car_guy_puncham</span>
           </a>
           <a
-            href="https://instagram.com"
+            href="https://www.facebook.com/punchams.posse.2025"
             target="_blank"
             rel="noopener noreferrer"
             className="social-link"
           >
-            Facebook
-            <img src={insta} alt="Instagram" className="social-icon" />
+            <span>Punchams Posse</span>
+            <img
+              src={facebook}
+              height={"20px"}
+              width={"20px"}
+              alt="Instagram"
+              className="social-icon"
+            />
           </a>
         </div>
         <div className="calendar-container">
@@ -37,7 +50,7 @@ function App() {
             color="#3b82f6"
             position="relative"
           />
-        </div>        
+        </div>
       </div>
     </div>
   );

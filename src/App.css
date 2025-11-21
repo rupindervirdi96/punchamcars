@@ -15,7 +15,7 @@
 }
 
 .calendar-container {
-  background: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 0px 0px 20px 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   padding: 60px 40px;
@@ -41,14 +41,14 @@
 }
 
 .calendar-container h1 {
-  color: #1f2937;
+  color: #ffffff;
   font-size: 32px;
   margin-bottom: 15px;
   font-weight: 700;
 }
 
 .calendar-container .subtitle {
-  color: #6b7280;
+  color: #ffffff;
   font-size: 16px;
   margin-bottom: 40px;
   line-height: 1.6;
@@ -116,6 +116,12 @@
   .calendar-container .subtitle {
     font-size: 14px;
     margin-bottom: 30px;
+  }
+
+  .social-link {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
   }
 }
 

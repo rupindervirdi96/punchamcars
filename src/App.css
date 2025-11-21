@@ -127,5 +127,5 @@
 }
 
 .calendly-badge-widget {
-  position: inherit;
+  position: inherit !important;
 }

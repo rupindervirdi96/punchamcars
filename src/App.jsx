@@ -1,57 +1,119 @@
-import { PopupWidget } from "react-calendly";
+import { useState } from "react";
 import "./App.css";
-import insta from "./assets/insta.svg";
-import facebook from "./assets/facebook.svg";
+import carPhoto from "./assets/carphoto.jpg";
+import DreamCarForm from "./components/DreamCarForm";
+import CalendlyPanel from "./components/CalendlyPanel";
+import CarList from "./components/CarList";
+import Lightbox from "./components/Lightbox";
 
+const dummyCars = [
+    {
+      Brand: "Tesla",
+      Model: "Model 3 Performance",
+      Year: 2023,
+      Mileage: 12000,
+      BodyType: "Sedan",
+      Price: 45999,
+      Photos: [carPhoto, carPhoto, carPhoto],
+      IsFeatured: true,
+    },
+    {
+      Brand: "BMW",
+      Model: "X5 M Sport",
+      Year: 2022,
+      Mileage: 18000,
+      BodyType: "SUV",
+      Price: 63999,
+      Photos: [carPhoto, carPhoto, carPhoto],
+      IsFeatured: true,
+    },
+    {
+      Brand: "Mercedes-Benz",
+      Model: "C300 AMG Line",
+      Year: 2021,
+      Mileage: 24000,
+      BodyType: "Sedan",
+      Price: 42999,
+      Photos: [carPhoto, carPhoto, carPhoto],
+      IsFeatured: false,
+    },
+    {
+      Brand: "Audi",
+      Model: "Q7 S line",
+      Year: 2020,
+      Mileage: 32000,
+      BodyType: "SUV",
+      Price: 51999,
+      Photos: [carPhoto, carPhoto, carPhoto],
+      IsFeatured: false,
+    },
+    {
+      Brand: "Porsche",
+      Model: "911 Carrera",
+      Year: 2019,
+      Mileage: 15000,
+      BodyType: "Coupe",
+      Price: 89999,
+      Photos: [carPhoto, carPhoto, carPhoto],
+      IsFeatured: true,
+    },
+    {
+      Brand: "Range Rover",
+      Model: "Velar R-Dynamic",
+      Year: 2021,
+      Mileage: 22000,
+      BodyType: "SUV",
+      Price: 76999,
+      Photos: [carPhoto, carPhoto, carPhoto],
+      IsFeatured: false,
+    },
+  ];
 function App() {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activeCarIndex, setActiveCarIndex] = useState(0);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+
+  const openLightbox = (carIndex, photoIndex) => {
+    setActiveCarIndex(carIndex);
+    setActivePhotoIndex(photoIndex);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const currentCar = dummyCars[activeCarIndex];
+  const currentPhotos = currentCar?.Photos || [];
+
+  const showNextPhoto = () => {
+    if (!currentPhotos.length) return;
+    setActivePhotoIndex((prev) => (prev + 1) % currentPhotos.length);
+  };
+
+  const showPrevPhoto = () => {
+    if (!currentPhotos.length) return;
+    setActivePhotoIndex((prev) => (prev - 1 + currentPhotos.length) % currentPhotos.length);
+  };
+
   return (
     <div className="App">
-      <div className="container">
-        <div className="social-links">
-          <a
-            href="https://www.instagram.com/de_car_guy_puncham/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="social-link"
-          >
-            <img
-              src={insta}
-              height={"20px"}
-              width={"20px"}
-              alt="Instagram"
-              className="social-icon"
-            />
-            <span>de_car_guy_puncham</span>
-          </a>
-          <a
-            href="https://www.facebook.com/punchams.posse.2025"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="social-link"
-          >
-            <span>Punchams Posse</span>
-            <img
-              src={facebook}
-              height={"20px"}
-              width={"20px"}
-              alt="Instagram"
-              className="social-icon"
-            />
-          </a>
-        </div>
-        <div className="calendar-container">
-          <h1>PUNCHAM GIRDHAR</h1>
-          <p className="subtitle">Plan your next car with me.</p>
-          <PopupWidget
-            url="https://calendly.com/punchamgirdhar91-zqft"
-            rootElement={document.getElementById("root")}
-            text="Let's meet"
-            textColor="#ffffff"
-            color="#3b82f6"
-            position="relative"
-          />
-        </div>
+      <div className="main-layout">
+        <DreamCarForm />
+        <CalendlyPanel />
+        <CarList cars={dummyCars} onPhotoClick={openLightbox} />
       </div>
+
+      <Lightbox
+        open={lightboxOpen}
+        photos={currentPhotos}
+        activeIndex={activePhotoIndex}
+        onClose={closeLightbox}
+        onNext={showNextPhoto}
+        onPrev={showPrevPhoto}
+        onDotClick={setActivePhotoIndex}
+        currentCar={currentCar}
+      />
     </div>
   );
 }

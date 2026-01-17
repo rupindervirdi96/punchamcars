@@ -33,8 +33,8 @@ async function sendDreamCarEmail(submission) {
   `;
 
   const info = await transporter.sendMail({
-    from: "rupzvirdi.96@gmail.com",
-    to: "rupindervirdi96@gmail.com",
+    from: `"Puncham Cars" rupzvirdi.96@gmail.com`,
+    to: process.env.FORM_TO_EMAIL,
     subject: "New Dream Car Form Submission",
     html,
   });

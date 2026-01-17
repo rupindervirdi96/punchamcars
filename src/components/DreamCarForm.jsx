@@ -7,7 +7,7 @@ function DreamCarForm() {
   const [creditScore, setCreditScore] = useState(720);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const form = e.target;
@@ -34,11 +34,26 @@ function DreamCarForm() {
       extraDetails,
     };
 
-    // Placeholder: inspect submission payload in console for now.
-    // Replace this with your actual submission logic (API call, etc.).
-    // eslint-disable-next-line no-console
-    console.log("Dream car form submission", submission);
-    setShowSuccess(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/dreamcar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submission),
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      setShowSuccess(true);
+      form.reset();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Error submitting dream car form", error);
+      alert("Could not send your preferences. Please try again.");
+    }
   };
 
   useEffect(() => {

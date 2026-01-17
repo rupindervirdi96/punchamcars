@@ -1,6 +1,7 @@
 // const React = require("react");
 // const ReactDOMServer = require('react-dom/server');
 // const App = require('./path/to/your/App').default; // Adjust the path to your App component
+require("dotenv").config({ path: __dirname + "/.env" });
 const express = require("express");
 const app = express();
 const server = require("http").createServer(app);

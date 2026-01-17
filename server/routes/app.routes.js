@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const config = require("config");
-
 const mongoose = require("mongoose");
+const { sendDreamCarEmail } = require("../services/mail");
 
 const CarSchema = new mongoose.Schema({
   Brand: {
@@ -64,6 +63,17 @@ const Car = mongoose.model("car", CarSchema);
 router.get("/cars", async (req, res) => {
   const cars = await Car.find();
   res.send(cars);
+});
+
+router.post("/dreamcar", async (req, res) => {
+  try {
+    const submission = req.body;
+    await sendDreamCarEmail(submission);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("Error sending dream car email", error);
+    res.status(500).json({ ok: false, error: "Email failed" });
+  }
 });
 
 module.exports = router;

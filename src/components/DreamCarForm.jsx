@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
-
 function DreamCarForm() {
   const [maxBudget, setMaxBudget] = useState(60000);
   const [yearFrom, setYearFrom] = useState(2018);
@@ -37,7 +35,7 @@ function DreamCarForm() {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/dreamcar`, {
+      const response = await fetch("/api/dreamcar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

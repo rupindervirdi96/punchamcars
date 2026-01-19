@@ -1,18 +1,12 @@
 const nodemailer = require("nodemailer");
-const { Resend } = require("resend");
 
-const resendApiKey = process.env.RESEND_API_KEY;
 const formToEmail = process.env.FORM_TO_EMAIL;
 
-// Configure Resend client if API key is present
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
-
-// Fallback Gmail SMTP via Nodemailer (requires app password)
+// Gmail SMTP via Nodemailer (requires app password)
 const gmailUser = process.env.GMAIL_USER || "rupzvirdi.96@gmail.com";
 const gmailPassword = process.env.GMAIL_APP_PASSWORD;
 
-const transporter = gmailPassword
-  ? nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
@@ -20,8 +14,7 @@ const transporter = gmailPassword
         user: gmailUser,
         pass: gmailPassword,
       },
-    })
-  : null;
+    });
 
 async function sendDreamCarEmail(submission) {
   const {
@@ -50,27 +43,9 @@ async function sendDreamCarEmail(submission) {
     <p><strong>Details:</strong><br>${extraDetails || "N/A"}</p>
   `;
 
-  // Prefer Resend if available
-  if (resend) {
-    const { data, error } = await resend.emails.send({
-      from: "Puncham Cars <onboarding@resend.dev>",
-      to: formToEmail,
-      subject: "New Dream Car Form Submission",
-      html,
-    });
-
-    if (error) {
-      console.error("Error sending email via Resend", error);
-      // Fall through to Nodemailer if configured
-    } else {
-      console.log("DreamCar email sent via Resend:", data);
-      return;
-    }
-  }
-
   if (!transporter) {
     throw new Error(
-      "No email transport configured: RESEND_API_KEY or GMAIL_APP_PASSWORD must be set",
+      "No email transport configured: GMAIL_APP_PASSWORD must be set",
     );
   }
 

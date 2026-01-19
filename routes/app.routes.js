@@ -68,12 +68,25 @@ router.get("/cars", async (req, res) => {
 router.post("/dreamcar", async (req, res) => {
   try {
     const submission = req.body;
-    await sendDreamCarEmail(submission);
+
+    // 1️⃣ Respond immediately (important for Render)
     res.status(200).json({ ok: true });
+
+    // 2️⃣ Send email in background (do NOT await)
+    sendDreamCarEmail(submission)
+      .then(() => {
+        console.log("Dream car email sent");
+      })
+      .catch((error) => {
+        console.error("Dream car email failed:", error);
+      });
+
   } catch (error) {
-    console.error("Error sending dream car email", error);
-    res.status(500).json({ ok: false, error: "Email failed" });
+    // This catch is now only for sync errors
+    console.error("Dream car route error:", error);
+    res.status(500).json({ ok: false });
   }
 });
+
 
 module.exports = router;

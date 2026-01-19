@@ -21,11 +21,12 @@ app.use('/api', require('./routes/app.routes'));
 
 // Serve React build as static files
 if (process.env.NODE_ENV === "production") {
-    app.use(express.static("client/build"));
-    app.get("*", (req, res) => {
-        res.setHeader("Access-Control-Allow-Credentials","true")
-        res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
-    });
+  const buildPath = path.resolve(__dirname, "..", "build");
+  app.use(express.static(buildPath));
+  app.get("*", (req, res) => {
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.sendFile(path.join(buildPath, "index.html"));
+  });
 }
 
 server.listen(port, () => {

@@ -36,12 +36,10 @@ function DreamCarForm() {
     };
 
     try {
-      const response = await axios.get("/api/dreamcar", {
-        method: "POST",
+      const response = await axios.post("/api/dreamcar", submission, {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(submission),
       });
 
       if (!response.ok) {

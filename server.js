@@ -1,6 +1,3 @@
-// const React = require("react");
-// const ReactDOMServer = require('react-dom/server');
-// const App = require('./path/to/your/App').default; // Adjust the path to your App component
 const express = require('express');
 const connectDB = require('./config/db');
 var cors = require('cors');

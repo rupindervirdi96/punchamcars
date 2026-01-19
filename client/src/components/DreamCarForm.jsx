@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 function DreamCarForm() {
   const [maxBudget, setMaxBudget] = useState(60000);
@@ -35,7 +36,7 @@ function DreamCarForm() {
     };
 
     try {
-      const response = await fetch("/api/dreamcar", {
+      const response = await axios.get("/api/dreamcar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,31 +1,11 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+require("dotenv").config();
 
 const formToEmail = process.env.FORM_TO_EMAIL;
-const gmailUser = process.env.GMAIL_USER;
-const gmailPassword = process.env.GMAIL_APP_PASSWORD;
-
-if (!gmailUser || !gmailPassword) {
-  console.error("Gmail credentials missing");
-}
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: gmailUser,
-    pass: gmailPassword,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = new Resend(resendApiKey);
 
 async function sendDreamCarEmail(submission) {
-  if (!formToEmail) {
-    throw new Error("FORM_TO_EMAIL not configured");
-  }
-
   const html = `
     <h2>New Dream Car Request</h2>
     <p><strong>Name:</strong> ${submission.name}</p>
@@ -37,12 +17,13 @@ async function sendDreamCarEmail(submission) {
     <p><strong>Details:</strong><br>${submission.extraDetails || "N/A"}</p>
   `;
 
-  return transporter.sendMail({
-    from: `"Puncham Cars" <${gmailUser}>`,
-    to: formToEmail,
-    subject: "New Dream Car Form Submission",
+  const result = await resend.emails.send({
+    from: "Puncham Cars <onboarding@resend.dev>",
+    to: [formToEmail],
+    subject: "Dream car request received",
     html,
   });
+  return result;
 }
 
 module.exports = { sendDreamCarEmail };

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 
 function DreamCarForm() {
   const [maxBudget, setMaxBudget] = useState(60000);
@@ -12,45 +11,31 @@ function DreamCarForm() {
     e.preventDefault();
 
     const form = e.target;
-    const name = form["client-name"].value.trim();
-    const email = form["client-email"].value.trim();
-    const phone = form["client-phone"].value.trim();
-    const extraDetails = form["extra-details"].value.trim();
-
-    if (!name || !email || !phone) {
-      // Basic guard to ensure the main fields are filled.
-      // You can replace this with your own UI/validation later.
-      alert("Please fill in your name, email and phone.");
-      return;
-    }
 
     const submission = {
-      name,
-      email,
-      phone,
+      name: form["client-name"].value.trim(),
+      email: form["client-email"].value.trim(),
+      phone: form["client-phone"].value.trim(),
       maxBudget,
       yearFrom,
       yearTo,
       creditScore,
-      extraDetails,
+      extraDetails: form["extra-details"].value.trim(),
     };
 
     try {
-      const response = await axios.post("/api/dreamcar", submission, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const res = await fetch("/api/dreamcar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submission),
       });
 
-      if (!response.ok) {
-        throw new Error("Request failed");
-      }
+      if (!res.ok) throw new Error("Failed");
 
       setShowSuccess(true);
       form.reset();
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Error submitting dream car form", error);
+    } catch (err) {
+      console.error(err);
       alert("Could not send your preferences. Please try again.");
     }
   };
@@ -112,9 +97,7 @@ function DreamCarForm() {
             Max budget
           </label>
           <div className="range-wrapper">
-            <span className="range-value">
-              ${maxBudget.toLocaleString()}
-            </span>
+            <span className="range-value">${maxBudget.toLocaleString()}</span>
             <input
               id="max-budget"
               type="range"
@@ -217,7 +200,8 @@ function DreamCarForm() {
             <div className="form-success-icon">✓</div>
             <h3 className="form-success-title">Preferences saved</h3>
             <p className="form-success-message">
-              Thanks! I&apos;ll use these details to match you with the right car.
+              Thanks! I&apos;ll use these details to match you with the right
+              car.
             </p>
             <button
               type="button"

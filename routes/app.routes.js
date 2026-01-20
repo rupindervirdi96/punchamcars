@@ -74,8 +74,8 @@ router.post("/dreamcar", async (req, res) => {
 
     // 2️⃣ Send email in background (do NOT await)
     sendDreamCarEmail(submission)
-      .then(() => {
-        console.log("Dream car email sent");
+      .then((res) => {
+        console.log(res.data);
       })
       .catch((error) => {
         console.error("Dream car email failed:", error);

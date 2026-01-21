@@ -76,8 +76,14 @@ function DreamCarForm() {
 
     const form = e.target;
 
+    const firstName = form["client-first-name"].value.trim();
+    const lastName = form["client-last-name"].value.trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+
     const submission = {
-      name: form["client-name"].value.trim(),
+      name: fullName,
+      firstName,
+      lastName,
       email: form["client-email"].value.trim(),
       phone: form["client-phone"].value.trim(),
       birthDate: {
@@ -117,15 +123,28 @@ function DreamCarForm() {
         Share a few quick details so I can match you with the right car.
       </p>
       <form className="form-grid" onSubmit={handleSubmit} ref={formRef}>
-        <div className="form-field full-width">
-          <label className="form-label" htmlFor="client-name">
-            Name
+        <div className="form-field">
+          <label className="form-label" htmlFor="client-first-name">
+            First name
           </label>
           <input
-            id="client-name"
+            id="client-first-name"
             type="text"
             className="text-input"
-            placeholder="Your full name"
+            placeholder="First name"
+            required
+          />
+        </div>
+
+        <div className="form-field">
+          <label className="form-label" htmlFor="client-last-name">
+            Last name
+          </label>
+          <input
+            id="client-last-name"
+            type="text"
+            className="text-input"
+            placeholder="Last name"
             required
           />
         </div>
@@ -151,7 +170,7 @@ function DreamCarForm() {
             id="client-phone"
             type="tel"
             className="text-input"
-            placeholder="Mobile or WhatsApp number"
+            placeholder="Phone number"
             inputMode="numeric"
             maxLength={10}
             pattern="\d{10}"

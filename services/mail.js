@@ -6,6 +6,9 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const resend = new Resend(resendApiKey);
 
 async function sendDreamCarEmail(submission) {
+  const fullName = [submission.firstName, submission.lastName]
+    .filter(Boolean)
+    .join(" ") || submission.name || "N/A";
   const birthDate = submission.birthDate;
   const birthDateDisplay = birthDate
     ? `${birthDate.day}-${birthDate.month}-${birthDate.year}`
@@ -22,7 +25,7 @@ async function sendDreamCarEmail(submission) {
           <tbody>
             <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Name</td>
-              <td style="padding:6px 0 4px;color:#e5e7eb;">${submission.name}</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${fullName}</td>
             </tr>
             <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Email</td>

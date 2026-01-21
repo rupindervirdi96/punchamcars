@@ -65,6 +65,88 @@
   color: #9ca3af;
 }
 
+.address-autocomplete-wrapper {
+  position: relative;
+}
+
+.address-loading-indicator {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(148, 163, 184, 0.4);
+  border-top-color: #60a5fa;
+  border-right-color: #60a5fa;
+  animation: address-spinner 0.6s linear infinite;
+  pointer-events: none;
+}
+
+.address-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.98);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 30;
+}
+
+.address-suggestion-item {
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.address-suggestion-item:hover {
+  background: rgba(37, 99, 235, 0.28);
+}
+
+.address-suggestion-primary {
+  font-weight: 500;
+}
+
+.address-suggestion-secondary {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.address-suggestion-loading {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.address-suggestions-footer {
+  padding: 6px 12px 8px;
+  border-top: 1px solid rgba(31, 41, 55, 0.9);
+  font-size: 10px;
+  color: #6b7280;
+  text-align: right;
+}
+
+@keyframes address-spinner {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -123,6 +205,47 @@
   justify-content: space-between;
   font-size: 11px;
   color: #6b7280;
+}
+
+.birthdate-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.birthdate-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.birthdate-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.select-input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f9fafb;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.6);
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #9ca3af 50%),
+    linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.select-input:focus {
+  box-shadow: 0 0 0 1px #6366f1, 0 0 0 3px rgba(99, 102, 241, 0.35);
 }
 
 .year-range-row {
@@ -270,13 +393,22 @@
   box-shadow: 0 26px 80px rgba(15, 23, 42, 0.9);
   padding: 36px 30px;
   text-align: center;
-  max-width: 500px;
   width: 100%;
+  height: 100%;
   animation: slideUp 0.5s ease-out;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
+  max-width: none;
+}
+
+.calendar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  align-self: stretch;
 }
 
 @keyframes slideUp {

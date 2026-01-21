@@ -101,10 +101,10 @@ function App() {
       <div className="main-layout">
         <DreamCarForm />
         <CalendlyPanel />
-        <CarList cars={dummyCars} onPhotoClick={openLightbox} />
+        {/* <CarList cars={dummyCars} onPhotoClick={openLightbox} /> */}
       </div>
 
-      <Lightbox
+      {/* <Lightbox
         open={lightboxOpen}
         photos={currentPhotos}
         activeIndex={activePhotoIndex}
@@ -113,7 +113,7 @@ function App() {
         onPrev={showPrevPhoto}
         onDotClick={setActivePhotoIndex}
         currentCar={currentCar}
-      />
+      /> */}
     </div>
   );
 }

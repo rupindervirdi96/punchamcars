@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useGeoapifyAutocomplete from "../hooks/useGeoapifyAutocomplete";
 
 function DreamCarForm() {
   const [maxBudget, setMaxBudget] = useState(60000);
@@ -6,6 +7,15 @@ function DreamCarForm() {
   const [yearTo, setYearTo] = useState(2024);
   const [creditScore, setCreditScore] = useState(720);
   const [showSuccess, setShowSuccess] = useState(false);
+  const {
+    address,
+    setAddress,
+    addressSuggestions,
+    setAddressSuggestions,
+    isAddressSearching,
+    showAddressSuggestions,
+    setShowAddressSuggestions,
+  } = useGeoapifyAutocomplete("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,6 +26,12 @@ function DreamCarForm() {
       name: form["client-name"].value.trim(),
       email: form["client-email"].value.trim(),
       phone: form["client-phone"].value.trim(),
+      birthDate: {
+        day: form["birth-day"].value,
+        month: form["birth-month"].value,
+        year: form["birth-year"].value,
+      },
+      address: (address || form["client-address"].value).trim(),
       maxBudget,
       yearFrom,
       yearTo,
@@ -34,6 +50,8 @@ function DreamCarForm() {
 
       setShowSuccess(true);
       form.reset();
+  setAddress("");
+  setAddressSuggestions([]);
     } catch (err) {
       console.error(err);
       alert("Could not send your preferences. Please try again.");
@@ -88,8 +106,149 @@ function DreamCarForm() {
             type="tel"
             className="text-input"
             placeholder="Mobile or WhatsApp number"
+            inputMode="numeric"
+            maxLength={10}
+            pattern="\d{10}"
+            onChange={(e) => {
+              e.target.value = e.target.value
+                .replace(/\D/g, "")
+                .slice(0, 10);
+            }}
             required
           />
+        </div>
+
+        <div className="form-field full-width">
+          <label className="form-label">Birthdate</label>
+          <div className="birthdate-row">
+            <div className="birthdate-column">
+              <span className="birthdate-label">Day</span>
+              <select
+                id="birth-day"
+                className="select-input"
+                required
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  DD
+                </option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                  <option key={day} value={day}>
+                    {day}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="birthdate-column">
+              <span className="birthdate-label">Month</span>
+              <select
+                id="birth-month"
+                className="select-input"
+                required
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  MM
+                </option>
+                <option value="1">Jan</option>
+                <option value="2">Feb</option>
+                <option value="3">Mar</option>
+                <option value="4">Apr</option>
+                <option value="5">May</option>
+                <option value="6">Jun</option>
+                <option value="7">Jul</option>
+                <option value="8">Aug</option>
+                <option value="9">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+            </div>
+            <div className="birthdate-column">
+              <span className="birthdate-label">Year</span>
+              <select
+                id="birth-year"
+                className="select-input"
+                required
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  YYYY
+                </option>
+                {Array.from(
+                  { length: new Date().getFullYear() - 1940 + 1 },
+                  (_, i) => 1940 + i
+                )
+                  .reverse()
+                  .map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-field full-width">
+          <label className="form-label" htmlFor="client-address">
+            Address
+          </label>
+          <div className="address-autocomplete-wrapper">
+            <input
+              id="client-address"
+              type="text"
+              className="text-input"
+              placeholder="Street, city, state"
+              required
+              autoComplete="off"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              onFocus={() => {
+                if (addressSuggestions.length > 0) {
+                  setShowAddressSuggestions(true);
+                }
+              }}
+            />
+            {isAddressSearching && (
+              <div className="address-loading-indicator" aria-hidden="true" />
+            )}
+            {(showAddressSuggestions &&
+              (addressSuggestions.length > 0 || isAddressSearching)) && (
+              <div className="address-suggestions">
+                {isAddressSearching && (
+                  <div className="address-suggestion-item address-suggestion-loading">
+			            Searching addresses...
+                  </div>
+                )}
+                {addressSuggestions.map((suggestion) => (
+                  <button
+                    type="button"
+                    key={suggestion.id}
+                    className="address-suggestion-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setAddress(suggestion.formatted);
+                      setShowAddressSuggestions(false);
+                      setAddressSuggestions([]);
+                    }}
+                  >
+                    <div className="address-suggestion-primary">
+                      {suggestion.primary}
+                    </div>
+                    {suggestion.secondary && (
+                      <div className="address-suggestion-secondary">
+                        {suggestion.secondary}
+                      </div>
+                    )}
+                  </button>
+                ))}
+                <div className="address-suggestions-footer">
+                  Powered by Geoapify &amp; OpenStreetMap
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="form-field full-width">

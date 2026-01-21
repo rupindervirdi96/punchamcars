@@ -1,12 +1,18 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import useGeoapifyAutocomplete from "../hooks/useGeoapifyAutocomplete";
 
 function DreamCarForm() {
-  const [maxBudget, setMaxBudget] = useState(60000);
-  const [yearFrom, setYearFrom] = useState(2018);
-  const [yearTo, setYearTo] = useState(2024);
-  const [creditScore, setCreditScore] = useState(720);
+  const DEFAULT_MAX_BUDGET = 60000;
+  const DEFAULT_YEAR_FROM = 2018;
+  const DEFAULT_YEAR_TO = 2024;
+  const DEFAULT_CREDIT_SCORE = 720;
+  const [maxBudget, setMaxBudget] = useState(DEFAULT_MAX_BUDGET);
+  const [yearFrom, setYearFrom] = useState(DEFAULT_YEAR_FROM);
+  const [yearTo, setYearTo] = useState(DEFAULT_YEAR_TO);
+  const [creditScore, setCreditScore] = useState(DEFAULT_CREDIT_SCORE);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [whatsappMessage, setWhatsappMessage] = useState("");
+  const formRef = useRef(null);
   const {
     address,
     setAddress,
@@ -16,6 +22,54 @@ function DreamCarForm() {
     showAddressSuggestions,
     setShowAddressSuggestions,
   } = useGeoapifyAutocomplete("");
+
+  const buildWhatsappMessage = (submission) => {
+    const budgetFormatted = submission.maxBudget
+      ? `$${Number(submission.maxBudget).toLocaleString()}`
+      : "";
+    const yearRange = submission.yearFrom && submission.yearTo
+      ? `${submission.yearFrom} - ${submission.yearTo}`
+      : "";
+    const birthDate = submission.birthDate?.day
+      ? `${submission.birthDate.day}/${submission.birthDate.month}/${submission.birthDate.year}`
+      : "";
+
+    return [
+      "Hi! I'm interested in finding my next car and I'd love your help.",
+      "",
+      `Name: ${submission.name || ""}`,
+      `Phone: ${submission.phone || ""}`,
+      `Email: ${submission.email || ""}`,
+      `Address: ${submission.address || ""}`,
+      `Birthdate: ${birthDate}`,
+      `Budget: ${budgetFormatted}`,
+      `Preferred year range: ${yearRange}`,
+      `Credit score (approx): ${submission.creditScore || ""}`,
+      `Extra details: ${submission.extraDetails || ""}`,
+      "",
+      "Please suggest the best options available and the next steps.",
+    ]
+      .filter((line) => line.trim() !== "")
+      .join("\n");
+  };
+
+  const whatsappLink = `https://wa.me/13679943333?text=${encodeURIComponent(
+    whatsappMessage
+  )}`;
+
+  const handleSuccessDismiss = () => {
+    setShowSuccess(false);
+    if (formRef.current) {
+      formRef.current.reset();
+    }
+    setAddress("");
+    setAddressSuggestions([]);
+    setShowAddressSuggestions(false);
+    setMaxBudget(DEFAULT_MAX_BUDGET);
+    setYearFrom(DEFAULT_YEAR_FROM);
+    setYearTo(DEFAULT_YEAR_TO);
+    setCreditScore(DEFAULT_CREDIT_SCORE);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,21 +102,13 @@ function DreamCarForm() {
 
       if (!res.ok) throw new Error("Failed");
 
+      setWhatsappMessage(buildWhatsappMessage(submission));
       setShowSuccess(true);
-      form.reset();
-  setAddress("");
-  setAddressSuggestions([]);
     } catch (err) {
       console.error(err);
       alert("Could not send your preferences. Please try again.");
     }
   };
-
-  useEffect(() => {
-    if (!showSuccess) return undefined;
-    const timer = setTimeout(() => setShowSuccess(false), 3000);
-    return () => clearTimeout(timer);
-  }, [showSuccess]);
 
   return (
     <div className="panel left-panel">
@@ -70,7 +116,7 @@ function DreamCarForm() {
       <p className="panel-subtitle">
         Share a few quick details so I can match you with the right car.
       </p>
-      <form className="form-grid" onSubmit={handleSubmit}>
+      <form className="form-grid" onSubmit={handleSubmit} ref={formRef}>
         <div className="form-field full-width">
           <label className="form-label" htmlFor="client-name">
             Name
@@ -251,7 +297,7 @@ function DreamCarForm() {
           </div>
         </div>
 
-        <div className="form-field full-width">
+        <div className="form-field">
           <label className="form-label" htmlFor="max-budget">
             Max budget
           </label>
@@ -261,7 +307,7 @@ function DreamCarForm() {
               id="max-budget"
               type="range"
               min="10000"
-              max="200000"
+              max="100000"
               step="1000"
               value={maxBudget}
               onChange={(e) => setMaxBudget(Number(e.target.value))}
@@ -269,7 +315,30 @@ function DreamCarForm() {
             />
             <div className="range-scale">
               <span>$10k</span>
-              <span>$200k+</span>
+              <span>$100k+</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-field">
+          <label className="form-label" htmlFor="credit-score">
+            Credit score (approx.)
+          </label>
+          <div className="range-wrapper">
+            <span className="range-value">{creditScore}</span>
+            <input
+              id="credit-score"
+              type="range"
+              min="300"
+              max="900"
+              step="10"
+              value={creditScore}
+              onChange={(e) => setCreditScore(Number(e.target.value))}
+              className="range-input"
+            />
+            <div className="range-scale">
+              <span>300</span>
+              <span>900</span>
             </div>
           </div>
         </div>
@@ -309,29 +378,6 @@ function DreamCarForm() {
         </div>
 
         <div className="form-field full-width">
-          <label className="form-label" htmlFor="credit-score">
-            Credit score (approx.)
-          </label>
-          <div className="range-wrapper">
-            <span className="range-value">{creditScore}</span>
-            <input
-              id="credit-score"
-              type="range"
-              min="300"
-              max="900"
-              step="10"
-              value={creditScore}
-              onChange={(e) => setCreditScore(Number(e.target.value))}
-              className="range-input"
-            />
-            <div className="range-scale">
-              <span>300</span>
-              <span>900</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-field full-width">
           <label className="form-label" htmlFor="extra-details">
             Any extra details
           </label>
@@ -350,7 +396,7 @@ function DreamCarForm() {
       {showSuccess && (
         <div
           className="form-success-overlay"
-          onClick={() => setShowSuccess(false)}
+          onClick={handleSuccessDismiss}
         >
           <div
             className="form-success-card"
@@ -362,13 +408,26 @@ function DreamCarForm() {
               Thanks! I&apos;ll use these details to match you with the right
               car.
             </p>
-            <button
-              type="button"
-              className="form-success-button"
-              onClick={() => setShowSuccess(false)}
-            >
-              Got it
-            </button>
+            <p className="form-success-highlight">
+              Eager for a car? Send a message directly on WhatsApp.
+            </p>
+            <div className="form-success-actions">
+              <a
+                className="form-success-whatsapp"
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Message on WhatsApp
+              </a>
+              <button
+                type="button"
+                className="form-success-wait"
+                onClick={handleSuccessDismiss}
+              >
+                I can wait
+              </button>
+            </div>
           </div>
         </div>
       )}

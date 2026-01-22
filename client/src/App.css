@@ -490,8 +490,71 @@
 .calendar-container .subtitle {
   color: #ffffff;
   font-size: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 14px;
   line-height: 1.6;
+}
+
+.calendar-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.9);
+  margin-bottom: 10px;
+}
+
+.calendar-contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0 18px;
+}
+
+.contact-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 14px;
+  border-radius: 2px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 64, 175, 0.18));
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e2e8f0;
+  font-size: 14px;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.contact-pill:hover {
+  transform: translateY(-2px);
+  border-color: rgba(129, 140, 248, 0.9);
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(59, 130, 246, 0.25));
+  box-shadow: 0 18px 32px rgba(30, 64, 175, 0.4);
+}
+
+.contact-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.contact-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.plan-line {
+  margin-top: 6px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(226, 232, 240, 0.95);
 }
 
 .calendar-social-links {
@@ -842,7 +905,19 @@
 
   .calendar-container .subtitle {
     font-size: 14px;
-    margin-bottom: 30px;
+    margin-bottom: 16px;
+  }
+
+  .calendar-contact-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .contact-pill {
+    width: 100%;
+    align-items: center;
+    font-size: 13px;
+    padding: 12px 14px;
   }
 
   .social-link {

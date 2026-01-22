@@ -2,11 +2,13 @@ import { useRef, useState } from "react";
 import useGeoapifyAutocomplete from "../hooks/useGeoapifyAutocomplete";
 
 function DreamCarForm() {
-  const DEFAULT_MAX_BUDGET = 60000;
+  const DEFAULT_BIWEEKLY_BUDGET = 300;
   const DEFAULT_YEAR_FROM = 2018;
   const DEFAULT_YEAR_TO = 2024;
   const DEFAULT_CREDIT_SCORE = 720;
-  const [maxBudget, setMaxBudget] = useState(DEFAULT_MAX_BUDGET);
+  const [biweeklyBudget, setBiweeklyBudget] = useState(
+    DEFAULT_BIWEEKLY_BUDGET
+  );
   const [yearFrom, setYearFrom] = useState(DEFAULT_YEAR_FROM);
   const [yearTo, setYearTo] = useState(DEFAULT_YEAR_TO);
   const [creditScore, setCreditScore] = useState(DEFAULT_CREDIT_SCORE);
@@ -24,8 +26,8 @@ function DreamCarForm() {
   } = useGeoapifyAutocomplete("");
 
   const buildWhatsappMessage = (submission) => {
-    const budgetFormatted = submission.maxBudget
-      ? `$${Number(submission.maxBudget).toLocaleString()}`
+    const budgetFormatted = submission.biweeklyBudget
+      ? `$${Number(submission.biweeklyBudget).toLocaleString()}`
       : "";
     const yearRange = submission.yearFrom && submission.yearTo
       ? `${submission.yearFrom} - ${submission.yearTo}`
@@ -42,7 +44,7 @@ function DreamCarForm() {
       `Email: ${submission.email || ""}`,
       `Address: ${submission.address || ""}`,
       `Birthdate: ${birthDate}`,
-      `Budget: ${budgetFormatted}`,
+      `Biweekly budget: ${budgetFormatted}`,
       `Preferred year range: ${yearRange}`,
       `Credit score (approx): ${submission.creditScore || ""}`,
       `Extra details: ${submission.extraDetails || ""}`,
@@ -65,7 +67,7 @@ function DreamCarForm() {
     setAddress("");
     setAddressSuggestions([]);
     setShowAddressSuggestions(false);
-    setMaxBudget(DEFAULT_MAX_BUDGET);
+    setBiweeklyBudget(DEFAULT_BIWEEKLY_BUDGET);
     setYearFrom(DEFAULT_YEAR_FROM);
     setYearTo(DEFAULT_YEAR_TO);
     setCreditScore(DEFAULT_CREDIT_SCORE);
@@ -92,7 +94,7 @@ function DreamCarForm() {
         year: form["birth-year"].value,
       },
       address: (address || form["client-address"].value).trim(),
-      maxBudget,
+      biweeklyBudget,
       yearFrom,
       yearTo,
       creditScore,
@@ -317,24 +319,26 @@ function DreamCarForm() {
         </div>
 
         <div className="form-field">
-          <label className="form-label" htmlFor="max-budget">
-            Max budget
+          <label className="form-label" htmlFor="biweekly-budget">
+            Biweekly budget
           </label>
           <div className="range-wrapper">
-            <span className="range-value">${maxBudget.toLocaleString()}</span>
+            <span className="range-value">
+              ${biweeklyBudget.toLocaleString()}
+            </span>
             <input
-              id="max-budget"
+              id="biweekly-budget"
               type="range"
-              min="10000"
-              max="100000"
-              step="1000"
-              value={maxBudget}
-              onChange={(e) => setMaxBudget(Number(e.target.value))}
+              min="50"
+              max="1000"
+              step="10"
+              value={biweeklyBudget}
+              onChange={(e) => setBiweeklyBudget(Number(e.target.value))}
               className="range-input"
             />
             <div className="range-scale">
-              <span>$10k</span>
-              <span>$100k+</span>
+              <span>$50</span>
+              <span>$1,000</span>
             </div>
           </div>
         </div>

@@ -44,7 +44,7 @@ const ClientSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  MaxBudget: {
+  BiweeklyBudget: {
     type: Number,
   },
   PreferredYearRange: {

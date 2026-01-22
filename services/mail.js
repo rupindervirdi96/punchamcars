@@ -44,8 +44,8 @@ async function sendDreamCarEmail(submission) {
               <td style="padding:6px 0 4px;color:#e5e7eb;">${addressDisplay}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;border-top:1px solid #1f2937;">Max Budget</td>
-              <td style="padding:10px 0 4px;color:#bbf7d0;border-top:1px solid #1f2937;">$${submission.maxBudget}</td>
+              <td style="padding:10px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;border-top:1px solid #1f2937;">Biweekly Budget</td>
+              <td style="padding:10px 0 4px;color:#bbf7d0;border-top:1px solid #1f2937;">$${submission.biweeklyBudget}</td>
             </tr>
             <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Year Range</td>

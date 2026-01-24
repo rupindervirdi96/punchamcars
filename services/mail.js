@@ -14,6 +14,23 @@ async function sendDreamCarEmail(submission) {
     ? `${birthDate.day}-${birthDate.month}-${birthDate.year}`
     : "N/A";
   const addressDisplay = submission.address || "N/A";
+  const addressWithUnit = submission.apartment
+    ? `${addressDisplay}, ${submission.apartment}`
+    : addressDisplay;
+  const vehicleType = submission.vehicleType || "N/A";
+  const creditStatus = submission.creditStatus || submission.creditScore || "N/A";
+  const employmentStatus = submission.employmentStatus || "N/A";
+  const biweeklyBudget = submission.biweeklyBudgetRange
+    || (typeof submission.biweeklyBudget === "number"
+      ? `$${submission.biweeklyBudget}`
+      : submission.biweeklyBudget)
+    || "N/A";
+  const incomeRange = submission.incomeRange || "N/A";
+  const livingDuration = submission.livingDuration || "N/A";
+
+  const yearRangeDisplay = submission.yearFrom && submission.yearTo
+    ? `${submission.yearFrom} – ${submission.yearTo}`
+    : "N/A";
 
   const html = `
     <div style="margin:0;padding:24px;background-color:#0b1120;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -36,24 +53,40 @@ async function sendDreamCarEmail(submission) {
               <td style="padding:6px 0 4px;color:#e5e7eb;">${submission.phone}</td>
             </tr>
             <tr>
+              <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Vehicle Type</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${vehicleType}</td>
+            </tr>
+            <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Birthdate</td>
               <td style="padding:6px 0 4px;color:#e5e7eb;">${birthDateDisplay}</td>
             </tr>
             <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Address</td>
-              <td style="padding:6px 0 4px;color:#e5e7eb;">${addressDisplay}</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${addressWithUnit}</td>
             </tr>
             <tr>
               <td style="padding:10px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;border-top:1px solid #1f2937;">Biweekly Budget</td>
-              <td style="padding:10px 0 4px;color:#bbf7d0;border-top:1px solid #1f2937;">$${submission.biweeklyBudget}</td>
+              <td style="padding:10px 0 4px;color:#bbf7d0;border-top:1px solid #1f2937;">${biweeklyBudget}</td>
             </tr>
             <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Year Range</td>
-              <td style="padding:6px 0 4px;color:#e5e7eb;">${submission.yearFrom} – ${submission.yearTo}</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${yearRangeDisplay}</td>
             </tr>
             <tr>
               <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Credit Score</td>
-              <td style="padding:6px 0 4px;color:#e5e7eb;">${submission.creditScore}</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${creditStatus}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Employment</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${employmentStatus}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Income</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${incomeRange}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0 4px;width:32%;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:11px;">Time at Address</td>
+              <td style="padding:6px 0 4px;color:#e5e7eb;">${livingDuration}</td>
             </tr>
           </tbody>
         </table>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./App.css";
 import carPhoto from "./assets/carphoto.jpg";
 import DreamCarForm from "./components/DreamCarForm";
+import SimpleDreamCarFlow from "./components/SimpleDreamCarFlow";
 import CalendlyPanel from "./components/CalendlyPanel";
 import CarList from "./components/CarList";
 import Lightbox from "./components/Lightbox";
@@ -69,6 +70,7 @@ const dummyCars = [
     },
   ];
 function App() {
+  const useSimpleUi = true; // switch to false to show the original UI
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeCarIndex, setActiveCarIndex] = useState(0);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
@@ -97,12 +99,19 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <div className="main-layout">
-        <DreamCarForm />
-        <CalendlyPanel />
-        {/* <CarList cars={dummyCars} onPhotoClick={openLightbox} /> */}
-      </div>
+    <div className={`App${useSimpleUi ? " simple-app" : ""}`}>
+      {useSimpleUi ? (
+        <div className="simple-shell">
+          <div className="simple-branding">Punchamcars.ca</div>
+          <SimpleDreamCarFlow />
+        </div>
+      ) : (
+        <div className="main-layout">
+          <DreamCarForm />
+          <CalendlyPanel />
+          {/* <CarList cars={dummyCars} onPhotoClick={openLightbox} /> */}
+        </div>
+      )}
 
       {/* <Lightbox
         open={lightboxOpen}

@@ -4,9 +4,9 @@
   "private": true,
   "dependencies": {
     "react": "^19.2.3",
+    "react-calendly": "^4.4.0",
     "react-dom": "^19.2.3",
-    "react-scripts": "5.0.1",
-    "react-calendly": "^4.4.0"
+    "react-scripts": "5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -26,5 +26,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "http://localhost:5000",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
 }

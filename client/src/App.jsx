@@ -97,10 +97,12 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <div className="main-layout">
-        <DreamCarForm />
-        <CalendlyPanel />
+    <div className="min-h-screen bg-[linear-gradient(135deg,#1a1a4e_0%,#0f0f2d_40%,#0a0a1a_100%)] flex items-start md:items-center justify-center p-3 md:p-5 font-ui">
+      <div className="flex gap-6 w-full max-w-[1200px]">
+        <div className="page-col flex flex-col w-full overflow-hidden rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md bg-[rgba(15,23,42,0.7)] md:[display:contents]">
+          <CalendlyPanel />
+          <DreamCarForm />
+        </div>
         {/* <CarList cars={dummyCars} onPhotoClick={openLightbox} /> */}
       </div>
 

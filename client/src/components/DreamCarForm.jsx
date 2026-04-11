@@ -37,6 +37,12 @@ const LIVING_DURATION_OPTIONS = [
   "6+ years",
 ];
 
+const TIME_SLOTS = [
+  "9:00 AM", "10:00 AM", "11:00 AM",
+  "12:00 PM", "1:00 PM", "2:00 PM",
+  "3:00 PM", "4:00 PM", "5:00 PM",
+];
+
 const buildWhatsappMessage = (submission) => {
   const birthDate = submission.birthDate?.day
     ? `${submission.birthDate.day}/${submission.birthDate.month}/${submission.birthDate.year}`
@@ -60,6 +66,7 @@ const buildWhatsappMessage = (submission) => {
     `Income: ${submission.incomeRange || ""}`,
     `Address: ${addressLine}`,
     `Time at address: ${submission.livingDuration || ""}`,
+    `Scheduled call: ${submission.callDate && submission.callTime ? `${submission.callDate} at ${submission.callTime}` : "Not scheduled"}`,
     "",
     "Please let me know the next steps.",
   ]
@@ -89,6 +96,8 @@ function DreamCarForm() {
     lastName: "",
     email: "",
     phone: "",
+    callDate: "",
+    callTime: "",
   });
   const {
     address,
@@ -99,6 +108,14 @@ function DreamCarForm() {
     showAddressSuggestions,
     setShowAddressSuggestions,
   } = useGeoapifyAutocomplete("");
+
+  const todayMidnight = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const [calViewYear, setCalViewYear] = useState(() => new Date().getFullYear());
+  const [calViewMonth, setCalViewMonth] = useState(() => new Date().getMonth());
 
   const steps = useMemo(
     () => [
@@ -166,6 +183,11 @@ function DreamCarForm() {
         title: "What's the best phone number to reach you?",
         type: "phone",
       },
+      {
+        id: "callSchedule",
+        title: "When's the best time for us to call you?",
+        type: "callSchedule",
+      },
     ],
     []
   );
@@ -212,6 +234,8 @@ function DreamCarForm() {
         return Boolean(formState.email.trim());
       case "phone":
         return Boolean(formState.phone.trim().length >= 10);
+      case "callSchedule":
+        return Boolean(formState.callDate && formState.callTime);
       default:
         return false;
     }
@@ -314,6 +338,8 @@ function DreamCarForm() {
       lastName: "",
       email: "",
       phone: "",
+      callDate: "",
+      callTime: "",
     });
     setAddress("");
     setAddressSuggestions([]);
@@ -512,6 +538,109 @@ function DreamCarForm() {
             <input className={inputCls} type="tel" placeholder="Phone number" value={formState.phone} onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} />
           )}
 
+          {/* Call Schedule */}
+          {currentStep.type === "callSchedule" && (
+            <div className="flex flex-col gap-4">
+              {/* Calendar */}
+              <div className="bg-[rgba(2,6,23,0.5)] rounded-2xl border border-[rgba(148,163,184,0.15)] p-4">
+                {/* Month navigation */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (calViewMonth === 0) { setCalViewMonth(11); setCalViewYear((y) => y - 1); }
+                      else setCalViewMonth((m) => m - 1);
+                    }}
+                    disabled={calViewYear === todayMidnight.getFullYear() && calViewMonth === todayMidnight.getMonth()}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="15 18 9 12 15 6" /></svg>
+                  </button>
+                  <span className="text-sm font-semibold text-gray-200">
+                    {new Date(calViewYear, calViewMonth).toLocaleString("default", { month: "long", year: "numeric" })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (calViewMonth === 11) { setCalViewMonth(0); setCalViewYear((y) => y + 1); }
+                      else setCalViewMonth((m) => m + 1);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="9 18 15 12 9 6" /></svg>
+                  </button>
+                </div>
+                {/* Day of week headers */}
+                <div className="grid grid-cols-7 mb-1">
+                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+                    <div key={d} className="text-center text-[11px] font-medium text-gray-500 py-1">{d}</div>
+                  ))}
+                </div>
+                {/* Day cells */}
+                <div className="grid grid-cols-7 gap-y-1">
+                  {(() => {
+                    const firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
+                    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+                    const cells = [];
+                    for (let i = 0; i < firstDay; i++) cells.push(null);
+                    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+                    return cells.map((day, i) => {
+                      if (day === null) return <div key={`blank-${i}`} />;
+                      const dateStr = `${calViewYear}-${String(calViewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                      const cellDate = new Date(calViewYear, calViewMonth, day);
+                      const isPast = cellDate < todayMidnight;
+                      const isSelected = formState.callDate === dateStr;
+                      return (
+                        <button
+                          key={dateStr}
+                          type="button"
+                          disabled={isPast}
+                          onClick={() => { updateField("callDate", dateStr); updateField("callTime", ""); }}
+                          className={[
+                            "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all duration-100",
+                            isSelected
+                              ? "bg-indigo-500 text-white font-bold shadow-[0_0_0_3px_rgba(99,102,241,0.35)]"
+                              : isPast
+                              ? "text-gray-600 cursor-not-allowed"
+                              : "text-gray-200 hover:bg-white/10 cursor-pointer font-medium",
+                          ].join(" ")}
+                        >
+                          {day}
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+              {/* Time slots */}
+              {formState.callDate && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs uppercase tracking-[0.06em] text-gray-400">Pick a time</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {TIME_SLOTS.map((slot) => {
+                      const isSelected = formState.callTime === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => updateField("callTime", slot)}
+                          className={[
+                            "border py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-150",
+                            isSelected
+                              ? "border-indigo-500 bg-gradient-to-br from-indigo-700 to-indigo-500 text-white shadow-[0_6px_16px_rgba(99,102,241,0.4)]"
+                              : "border-[rgba(148,163,184,0.25)] bg-[rgba(15,23,42,0.5)] text-gray-300 hover:border-[rgba(99,102,241,0.5)] hover:bg-[rgba(99,102,241,0.1)] hover:-translate-y-px",
+                          ].join(" ")}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex justify-between items-center gap-[10px] mt-1">
             <button
@@ -555,7 +684,7 @@ function DreamCarForm() {
             <p className="text-sm text-[#cbd5f5]">We&apos;ll review everything and get back to you shortly.</p>
             <a
               className="inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-br from-green-500 to-green-400 text-[#052e16] font-bold no-underline text-sm shadow-[0_14px_28px_rgba(34,197,94,0.4)] transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[0_18px_32px_rgba(34,197,94,0.5)]"
-              href={`https://wa.me/13679943333?text=${encodeURIComponent(whatsappMessage)}`}
+              href={`https://wa.me/16134006796?text=${encodeURIComponent(whatsappMessage)}`}
               target="_blank"
               rel="noreferrer"
             >

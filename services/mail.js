@@ -86,6 +86,32 @@ function section(title, rowsHtml) {
     </td></tr>`;
 }
 
+const formatNumber = (digits) => {
+  const n = Number(String(digits || "").replace(/\D/g, ""));
+  return n ? n.toLocaleString("en-CA") : "";
+};
+
+function tradeInRows(s, e) {
+  if (s.tradeIn === "No") return row("Trade-in", "No trade-in");
+  if (s.tradeIn !== "Yes") return row("Trade-in", "");
+
+  const vehicle = [clean(s.tradeInYear), clean(s.tradeInMake), clean(s.tradeInModel)].filter(Boolean).join(" ");
+  const km = formatNumber(s.tradeInKm);
+  let loan = "";
+  if (s.tradeInHasLoan === "No") loan = "No, paid off";
+  if (s.tradeInHasLoan === "Yes") loan = "Yes";
+
+  const balance = formatNumber(s.tradeInBalance);
+  return (
+    row("Vehicle", vehicle ? escapeHtml(vehicle) : "") +
+    row("Kilometres", km ? `${km} km` : "") +
+    row("Outstanding loan", loan) +
+    (s.tradeInHasLoan === "Yes"
+      ? row("Lender", e(s.tradeInLender)) + row("Balance owing", balance ? `≈ $${balance}` : `<span style="color:${C.muted};">Not provided</span>`)
+      : "")
+  );
+}
+
 function buildDreamCarEmail(submission) {
   const s = submission || {};
   const e = (v) => (clean(v) ? escapeHtml(clean(v)) : "");
@@ -147,7 +173,7 @@ function buildDreamCarEmail(submission) {
             <tr><td style="padding-top:4px;font-family:${C.font};font-size:15px;color:${C.muted};">
               ${vehicleType ? escapeHtml(vehicleType) : "Vehicle not chosen"}${
                 clean(s.biweeklyBudgetRange) ? ` · ${e(s.biweeklyBudgetRange)} biweekly` : ""
-              }
+              }${s.tradeIn === "Yes" ? " · Trade-in" : ""}
             </td></tr>
 
             <tr><td style="padding-top:22px;">
@@ -172,6 +198,8 @@ function buildDreamCarEmail(submission) {
               "Vehicle &amp; budget",
               row("Vehicle type", e(s.vehicleType)) + row("Biweekly budget", e(s.biweeklyBudgetRange))
             )}
+
+            ${section("Trade-in", tradeInRows(s, e))}
 
             ${section(
               "Financial profile",

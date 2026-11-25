@@ -45,6 +45,53 @@ const TIME_SLOTS = [
   "3:00 PM", "4:00 PM", "5:00 PM",
 ];
 
+const TRADE_IN_LABELS = { Yes: "Yes, I have a trade-in", No: "No trade-in" };
+const LOAN_LABELS = { Yes: "Yes, there's a loan", No: "No, it's paid off" };
+
+const formatKm = (digits) => (digits ? `${Number(digits).toLocaleString("en-CA")} km` : "");
+
+// One-line summary used in the WhatsApp message
+const describeTradeIn = (s) => {
+  if (s.tradeIn !== "Yes") return s.tradeIn === "No" ? "None" : "";
+  const vehicle = [s.tradeInYear, s.tradeInMake, s.tradeInModel].filter(Boolean).join(" ");
+  const km = formatKm(s.tradeInKm);
+  const loan =
+    s.tradeInHasLoan === "Yes"
+      ? `loan with ${s.tradeInLender}${s.tradeInBalance ? ` (~$${Number(s.tradeInBalance).toLocaleString("en-CA")} owing)` : ""}`
+      : s.tradeInHasLoan === "No"
+      ? "no loan"
+      : "";
+  return [vehicle, km, loan].filter(Boolean).join(", ");
+};
+
+const EMPTY_FORM = {
+  vehicleType: "",
+  birthDate: { day: "", month: "", year: "" },
+  creditStatus: "",
+  tradeIn: "",
+  tradeInYear: "",
+  tradeInMake: "",
+  tradeInModel: "",
+  tradeInKm: "",
+  tradeInHasLoan: "",
+  tradeInLender: "",
+  tradeInBalance: "",
+  employmentStatus: "",
+  biweeklyBudgetRange: "",
+  incomeRange: "",
+  address: "",
+  apartment: "",
+  livingDuration: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  callDate: "",
+  callTime: "",
+};
+
+const TRADE_IN_DETAIL_STEPS = new Set(["tradeInVehicle", "tradeInLoan"]);
+
 const buildWhatsappMessage = (submission) => {
   const birthDate = submission.birthDate?.day
     ? `${submission.birthDate.day}/${submission.birthDate.month}/${submission.birthDate.year}`
@@ -63,6 +110,7 @@ const buildWhatsappMessage = (submission) => {
     `Vehicle type: ${submission.vehicleType || ""}`,
     `Birthdate: ${birthDate}`,
     `Credit: ${submission.creditStatus || ""}`,
+    `Trade-in: ${describeTradeIn(submission)}`,
     `Employment: ${submission.employmentStatus || ""}`,
     `Biweekly budget: ${submission.biweeklyBudgetRange || ""}`,
     `Income: ${submission.incomeRange || ""}`,
@@ -86,23 +134,7 @@ function DreamCarForm() {
   const [whatsappMessage, setWhatsappMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
-  const [formState, setFormState] = useState({
-    vehicleType: "",
-    birthDate: { day: "", month: "", year: "" },
-    creditStatus: "",
-    employmentStatus: "",
-    biweeklyBudgetRange: "",
-    incomeRange: "",
-    address: "",
-    apartment: "",
-    livingDuration: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    callDate: "",
-    callTime: "",
-  });
+  const [formState, setFormState] = useState(EMPTY_FORM);
   const {
     address,
     setAddress,
@@ -140,6 +172,23 @@ function DreamCarForm() {
         title: "How would you describe your credit right now?",
         type: "options",
         options: CREDIT_OPTIONS,
+      },
+      {
+        id: "tradeIn",
+        title: "Do you have a vehicle to trade in?",
+        type: "options",
+        options: ["Yes", "No"],
+        labels: TRADE_IN_LABELS,
+      },
+      {
+        id: "tradeInVehicle",
+        title: "Tell us about your trade-in.",
+        type: "tradeInVehicle",
+      },
+      {
+        id: "tradeInLoan",
+        title: "Is there an outstanding loan on this vehicle?",
+        type: "tradeInLoan",
       },
       {
         id: "employmentStatus",
@@ -222,6 +271,20 @@ function DreamCarForm() {
         );
       case "creditStatus":
         return Boolean(formState.creditStatus);
+      case "tradeIn":
+        return Boolean(formState.tradeIn);
+      case "tradeInVehicle":
+        return Boolean(
+          formState.tradeInYear &&
+            formState.tradeInMake.trim() &&
+            formState.tradeInModel.trim() &&
+            formState.tradeInKm
+        );
+      case "tradeInLoan":
+        return (
+          formState.tradeInHasLoan === "No" ||
+          (formState.tradeInHasLoan === "Yes" && Boolean(formState.tradeInLender.trim()))
+        );
       case "employmentStatus":
         return Boolean(formState.employmentStatus);
       case "biweeklyBudgetRange":
@@ -247,14 +310,29 @@ function DreamCarForm() {
 
   const canGoNext = isStepComplete(currentStep);
 
-  // Returns true for steps that are invisibly auto-hidden (not explicitly skipped by user)
-  const isAutoHidden = (idx) =>
-    steps[idx].id === "livingDuration" && skippedSteps.has("address");
+  // Steps hidden by earlier answers (not explicitly skipped by the user).
+  // `state` lets callers check against answers that haven't re-rendered yet.
+  const isAutoHidden = (idx, state = formState) => {
+    const id = steps[idx].id;
+    if (id === "livingDuration" && skippedSteps.has("address")) return true;
+    if (TRADE_IN_DETAIL_STEPS.has(id) && state.tradeIn !== "Yes") return true;
+    return false;
+  };
+
+  const nextVisibleIndex = (from, state = formState) => {
+    let next = from + 1;
+    while (next < totalSteps - 1 && isAutoHidden(next, state)) next++;
+    return next;
+  };
+
+  // Step counter and progress only count steps this customer will actually see
+  const visibleSteps = steps.map((_, i) => i).filter((i) => !isAutoHidden(i));
+  const visiblePosition = Math.max(visibleSteps.indexOf(stepIndex), 0);
+  const visibleTotal = visibleSteps.length;
 
   const goNext = () => {
     if (!canGoNext) return;
-    let next = stepIndex + 1;
-    while (next < totalSteps - 1 && isAutoHidden(next)) next++;
+    const next = nextVisibleIndex(stepIndex);
     if (next < totalSteps) setStepIndex(next);
   };
 
@@ -299,15 +377,37 @@ function DreamCarForm() {
 
   const handleOptionSelect = (stepId, option) => {
     updateField(stepId, option);
-    let next = stepIndex + 1;
-    while (next < totalSteps - 1 && isAutoHidden(next)) next++;
+    const next = nextVisibleIndex(stepIndex, { ...formState, [stepId]: option });
     if (next < totalSteps) setStepIndex(next);
   };
 
-  const getSubmission = () => ({
-    ...formState,
-    address: (address || formState.address || "").trim(),
-  });
+  // Loan question: "No" moves on straight away; "Yes" reveals the lender fields
+  const handleLoanAnswer = (answer) => {
+    updateField("tradeInHasLoan", answer);
+    if (answer === "No") {
+      updateField("tradeInLender", "");
+      updateField("tradeInBalance", "");
+      const next = nextVisibleIndex(stepIndex, { ...formState, tradeInHasLoan: "No" });
+      if (next < totalSteps) setStepIndex(next);
+    }
+  };
+
+  const getSubmission = () => {
+    const submission = {
+      ...formState,
+      address: (address || formState.address || "").trim(),
+    };
+    // Drop leftover trade-in details if the customer switched their answer to "No"
+    if (submission.tradeIn !== "Yes") {
+      ["tradeInYear", "tradeInMake", "tradeInModel", "tradeInKm", "tradeInHasLoan", "tradeInLender", "tradeInBalance"].forEach(
+        (k) => (submission[k] = "")
+      );
+    } else if (submission.tradeInHasLoan !== "Yes") {
+      submission.tradeInLender = "";
+      submission.tradeInBalance = "";
+    }
+    return submission;
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -335,23 +435,7 @@ function DreamCarForm() {
   };
 
   const handleReset = () => {
-    setFormState({
-      vehicleType: "",
-      birthDate: { day: "", month: "", year: "" },
-      creditStatus: "",
-      employmentStatus: "",
-      biweeklyBudgetRange: "",
-      incomeRange: "",
-      address: "",
-      apartment: "",
-      livingDuration: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      callDate: "",
-      callTime: "",
-    });
+    setFormState(EMPTY_FORM);
     setAddress("");
     setAddressSuggestions([]);
     setShowAddressSuggestions(false);
@@ -375,7 +459,7 @@ function DreamCarForm() {
     " transition-[background,transform] duration-150 hover:bg-accent-hover active:scale-[0.98]" +
     " disabled:cursor-not-allowed disabled:bg-line disabled:text-muted";
 
-  const progress = totalSteps > 1 ? stepIndex / (totalSteps - 1) : 0;
+  const progress = visibleTotal > 1 ? visiblePosition / (visibleTotal - 1) : 0;
 
   const Check = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0" aria-hidden="true">
@@ -392,9 +476,9 @@ function DreamCarForm() {
             className="relative h-1 flex-1 rounded-full bg-line"
             role="progressbar"
             aria-valuemin={1}
-            aria-valuemax={totalSteps}
-            aria-valuenow={stepIndex + 1}
-            aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}
+            aria-valuemax={visibleTotal}
+            aria-valuenow={visiblePosition + 1}
+            aria-label={`Step ${visiblePosition + 1} of ${visibleTotal}`}
           >
             <div
               className="absolute inset-y-0 left-0 rounded-full bg-accent transition-[width] duration-500 ease-out"
@@ -408,7 +492,7 @@ function DreamCarForm() {
             </div>
           </div>
           <span className="shrink-0 text-[13px] tabular-nums text-muted">
-            {stepIndex + 1} / {totalSteps}
+            {visiblePosition + 1} / {visibleTotal}
           </span>
         </div>
 
@@ -470,7 +554,7 @@ function DreamCarForm() {
                         : "border-line bg-subtle font-medium text-ink hover:border-ink/25",
                     ].join(" ")}
                   >
-                    {option}
+                    {currentStep.labels?.[option] || option}
                     {isSelected && <Check />}
                   </button>
                 );
@@ -568,6 +652,100 @@ function DreamCarForm() {
             <div className="grid grid-cols-2 gap-2.5 max-sm:grid-cols-1">
               <input className={inputCls} type="text" autoComplete="given-name" placeholder="First name" value={formState.firstName} onChange={(e) => updateField("firstName", e.target.value)} />
               <input className={inputCls} type="text" autoComplete="family-name" placeholder="Last name" value={formState.lastName} onChange={(e) => updateField("lastName", e.target.value)} />
+            </div>
+          )}
+
+          {/* Trade-in vehicle details */}
+          {currentStep.type === "tradeInVehicle" && (
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls}>Year</span>
+                  <select className={selectCls} value={formState.tradeInYear} onChange={(e) => updateField("tradeInYear", e.target.value)}>
+                    <option value="">Select</option>
+                    {Array.from({ length: new Date().getFullYear() + 1 - 1990 + 1 }, (_, i) => new Date().getFullYear() + 1 - i).map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls}>Kilometres</span>
+                  <input
+                    className={`${inputCls} tabular-nums`}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 85,000"
+                    value={formState.tradeInKm ? Number(formState.tradeInKm).toLocaleString("en-CA") : ""}
+                    onChange={(e) => updateField("tradeInKm", e.target.value.replace(/\D/g, "").slice(0, 7))}
+                  />
+                </label>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls}>Make</span>
+                  <input className={inputCls} type="text" placeholder="e.g. Honda" value={formState.tradeInMake} onChange={(e) => updateField("tradeInMake", e.target.value)} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls}>Model</span>
+                  <input className={inputCls} type="text" placeholder="e.g. Civic" value={formState.tradeInModel} onChange={(e) => updateField("tradeInModel", e.target.value)} />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Trade-in loan */}
+          {currentStep.type === "tradeInLoan" && (
+            <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {["Yes", "No"].map((answer) => {
+                  const isSelected = formState.tradeInHasLoan === answer;
+                  return (
+                    <button
+                      key={answer}
+                      type="button"
+                      onClick={() => handleLoanAnswer(answer)}
+                      className={[
+                        "flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left text-[15px] transition-all duration-150",
+                        isSelected
+                          ? "border-accent bg-accent-soft font-semibold text-accent"
+                          : "border-line bg-subtle font-medium text-ink hover:border-ink/25",
+                      ].join(" ")}
+                    >
+                      {LOAN_LABELS[answer]}
+                      {isSelected && <Check />}
+                    </button>
+                  );
+                })}
+              </div>
+              {formState.tradeInHasLoan === "Yes" && (
+                <div className="grid animate-step-in gap-3 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1.5">
+                    <span className={labelCls}>Lender / bank</span>
+                    <input
+                      className={inputCls}
+                      type="text"
+                      placeholder="e.g. TD, RBC, Scotiabank"
+                      value={formState.tradeInLender}
+                      onChange={(e) => updateField("tradeInLender", e.target.value)}
+                      autoFocus
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className={labelCls}>Approx. balance owing <span className="text-muted/70">(optional)</span></span>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">$</span>
+                      <input
+                        className={`${inputCls} pl-8 tabular-nums`}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="12,000"
+                        value={formState.tradeInBalance ? Number(formState.tradeInBalance).toLocaleString("en-CA") : ""}
+                        onChange={(e) => updateField("tradeInBalance", e.target.value.replace(/\D/g, "").slice(0, 7))}
+                      />
+                    </div>
+                  </label>
+                </div>
+              )}
             </div>
           )}
 

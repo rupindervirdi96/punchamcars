@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+  ::selection {
+    @apply bg-accent text-white;
+  }
+  :focus-visible {
+    outline: 2px solid #2445ff;
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Archivo's width axis, used for the wordmark */
+  .font-wide {
+    font-stretch: 125%;
+  }
+  .font-semiwide {
+    font-stretch: 112%;
+  }
+}
+
 /* Address search spinner: needs combined translateY+rotate in one transform */
 @keyframes address-spinner {
   from { transform: translateY(-50%) rotate(0deg); }
@@ -11,21 +38,15 @@
   animation: address-spinner 0.6s linear infinite;
 }
 
-/* Mobile: strip individual panel chrome when inside the unified page-col card */
-@media (max-width: 768px) {
-  .page-col > .panel {
-    background: transparent !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    backdrop-filter: none !important;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
-  .page-col .calendar-container {
-    background: transparent !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-  .page-col .left-panel {
-    border-top: 1px solid rgba(148, 163, 184, 0.12);
-    padding-top: 20px;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

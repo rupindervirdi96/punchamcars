@@ -1,3 +1,4 @@
 {
-  "mongoURI": "mongodb+srv://goldshinecleaninginc:3065806152Davin@cluster0.t8wum.mongodb.net/test?retryWrites=true&w=majority"
+  "nolocoProject": "carmoji-app",
+  "airtableBaseId": "appEfbJMVqsVo1WRH"
 }

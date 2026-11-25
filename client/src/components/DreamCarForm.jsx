@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import useGeoapifyAutocomplete from "../hooks/useGeoapifyAutocomplete";
+import { MiniCar, VehicleIcon } from "./VehicleIcons";
+import { SITE } from "../siteInfo";
 
 const VEHICLE_OPTIONS = ["Sedan", "SUV", "Truck", "Coupe"];
 const CREDIT_OPTIONS = [
@@ -82,6 +84,8 @@ function DreamCarForm() {
   const [skippedSteps, setSkippedSteps] = useState(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [formState, setFormState] = useState({
     vehicleType: "",
     birthDate: { day: "", month: "", year: "" },
@@ -300,11 +304,16 @@ function DreamCarForm() {
     if (next < totalSteps) setStepIndex(next);
   };
 
+  const getSubmission = () => ({
+    ...formState,
+    address: (address || formState.address || "").trim(),
+  });
+
   const handleSubmit = async () => {
-    const submission = {
-      ...formState,
-      address: (address || formState.address || "").trim(),
-    };
+    if (isSubmitting) return;
+    const submission = getSubmission();
+    setIsSubmitting(true);
+    setSubmitError(false);
 
     try {
       const res = await fetch("/api/dreamcar", {
@@ -313,13 +322,15 @@ function DreamCarForm() {
         body: JSON.stringify(submission),
       });
 
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) throw new Error(`Submit failed: HTTP ${res.status}`);
 
       setWhatsappMessage(buildWhatsappMessage(submission));
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
-      alert("Could not send your preferences. Please try again.");
+      setSubmitError(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -347,80 +358,120 @@ function DreamCarForm() {
     setSkippedSteps(new Set());
     setStepIndex(0);
     setShowSuccess(false);
+    setSubmitError(false);
   };
 
   const inputCls =
-    "w-full border border-[rgba(148,163,184,0.4)] rounded-xl px-[14px] py-3 text-[15px]" +
-    " leading-[1.4] text-gray-50 bg-[rgba(15,23,42,0.8)] outline-none" +
-    " transition-[border-color,box-shadow] duration-150 placeholder:text-gray-500" +
-    " focus:border-indigo-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.25)]";
+    "w-full rounded-xl border border-line bg-surface px-4 py-3.5 text-[16px] leading-[1.4] text-ink" +
+    " outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted/60" +
+    " focus:border-accent focus:shadow-[0_0_0_4px_rgba(36,69,255,0.12)]";
 
-  const selectCls =
-    "border-0 border-b-2 border-[rgba(148,163,184,0.4)] pb-2 pt-1.5 px-0.5" +
-    " text-xl text-gray-50 bg-transparent outline-none appearance-none cursor-pointer" +
-    " focus:border-indigo-500 [&>option]:bg-slate-900 [&>option]:text-gray-50";
+  const selectCls = `${inputCls} cursor-pointer appearance-none`;
 
-  const nextBtnCls =
-    "rounded-xl px-4 py-3 border-0 font-bold text-sm text-white cursor-pointer" +
-    " bg-gradient-to-br from-blue-500 to-indigo-500 shadow-[0_8px_20px_rgba(37,99,235,0.4)]" +
-    " transition-[transform,box-shadow] duration-150 hover:-translate-y-px" +
-    " hover:shadow-[0_12px_26px_rgba(37,99,235,0.55)] disabled:opacity-40 disabled:cursor-not-allowed";
+  const labelCls = "text-[13px] font-medium text-muted";
+
+  const primaryBtnCls =
+    "inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-[15px] font-semibold text-white" +
+    " transition-[background,transform] duration-150 hover:bg-accent-hover active:scale-[0.98]" +
+    " disabled:cursor-not-allowed disabled:bg-line disabled:text-muted";
+
+  const progress = totalSteps > 1 ? stepIndex / (totalSteps - 1) : 0;
+
+  const Check = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
 
   return (
-    <div className="flex-1 bg-[rgba(15,23,42,0.7)] rounded-[20px] px-5 py-6 shadow-[0_20px_50px_rgba(0,0,0,0.35)] text-gray-200 backdrop-blur-md flex flex-col justify-center">
-      <div className="flex flex-col gap-[10px] w-full">
-        {/* Progress dots */}
-        <div className="flex justify-center gap-2">
-          {steps.map((step, index) => {
-            const isActive = index === stepIndex;
-            const isDone = isStepComplete(step);
-            const isSkipped = skippedSteps.has(step.id);
-            return (
-              <button
-                key={step.id}
-                type="button"
-                className={[
-                  "w-2.5 h-2.5 rounded-full border cursor-pointer transition-[background,border-color] duration-150",
-                  isActive
-                    ? "bg-indigo-500 border-indigo-500 shadow-[0_0_0_3px_rgba(99,102,241,0.3)]"
-                    : isDone
-                    ? "bg-emerald-400 border-emerald-400"
-                    : isSkipped
-                    ? "bg-[rgba(107,114,128,0.35)] border-[rgba(107,114,128,0.4)]"
-                    : "border-[rgba(148,163,184,0.35)] bg-[rgba(15,23,42,0.5)]",
-                ].join(" ")}
-                onClick={() => { if (index <= stepIndex) setStepIndex(index); }}
-                aria-label={`Go to step ${index + 1}`}
-              />
-            );
-          })}
+    <div className="relative">
+      <div className="rounded-[28px] border border-line bg-surface p-6 shadow-[0_1px_2px_rgba(21,23,27,0.04),0_24px_60px_-28px_rgba(21,23,27,0.22)] sm:p-10">
+        {/* Progress: a small car moves along as you answer */}
+        <div className="mb-8 flex items-center gap-4">
+          <div
+            className="relative h-1 flex-1 rounded-full bg-line"
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={totalSteps}
+            aria-valuenow={stepIndex + 1}
+            aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}
+          >
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-accent transition-[width] duration-500 ease-out"
+              style={{ width: `${progress * 100}%` }}
+            />
+            <div
+              className="absolute -top-[13px] -translate-x-1/2 text-accent transition-[left] duration-500 ease-out"
+              style={{ left: `${progress * 100}%` }}
+            >
+              <MiniCar className="h-[13px] w-[28px]" />
+            </div>
+          </div>
+          <span className="shrink-0 text-[13px] tabular-nums text-muted">
+            {stepIndex + 1} / {totalSteps}
+          </span>
         </div>
 
-        {/* Step card */}
-        <div className="bg-[rgba(2,6,23,0.45)] rounded-[18px] px-5 py-6 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border border-[rgba(148,163,184,0.15)] flex flex-col gap-[14px]">
-          <div className="text-xs uppercase tracking-[0.08em] text-gray-400">
-            Step {stepIndex + 1} of {totalSteps}
-          </div>
-          <h2 className="text-[19px] font-bold text-gray-50 m-0">{currentStep.title}</h2>
+        {/* Step */}
+        <div key={currentStep.id} className="flex animate-step-in flex-col gap-6">
+          <h2 className="text-[22px] font-semibold leading-snug tracking-tight text-ink sm:text-[26px]">
+            {currentStep.title}
+            {currentStep.skippable && (
+              <span className="ml-2 align-middle text-[13px] font-normal text-muted">Optional</span>
+            )}
+          </h2>
 
-          {/* Options */}
-          {currentStep.type === "options" && (
-            <div className="grid grid-cols-2 gap-[10px]">
+          {/* Vehicle type: silhouettes */}
+          {currentStep.type === "options" && currentStep.id === "vehicleType" && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {currentStep.options.map((option) => {
+                const isSelected = formState.vehicleType === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleOptionSelect(currentStep.id, option)}
+                    className={[
+                      "group flex flex-col items-center gap-2 rounded-2xl border px-3 py-5 transition-all duration-150",
+                      isSelected
+                        ? "border-accent bg-accent-soft text-accent"
+                        : "border-line bg-subtle text-ink hover:-translate-y-0.5 hover:border-ink/25",
+                    ].join(" ")}
+                  >
+                    <VehicleIcon
+                      type={option}
+                      wheelFill={isSelected ? "#ECEFFF" : "#FAF9F6"}
+                      className={[
+                        "h-10 w-full transition-colors duration-150",
+                        isSelected ? "text-accent" : "text-muted group-hover:text-ink",
+                      ].join(" ")}
+                    />
+                    <span className="text-[15px] font-semibold">{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Generic options */}
+          {currentStep.type === "options" && currentStep.id !== "vehicleType" && (
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {currentStep.options.map((option) => {
                 const isSelected = formState[currentStep.id] === option;
                 return (
                   <button
                     key={option}
                     type="button"
-                    className={[
-                      "border px-[14px] py-3 rounded-xl text-sm font-semibold cursor-pointer text-left transition-all duration-150",
-                      isSelected
-                        ? "border-indigo-500 bg-gradient-to-br from-indigo-700 to-indigo-500 text-white shadow-[0_8px_22px_rgba(99,102,241,0.45)]"
-                        : "border-[rgba(148,163,184,0.3)] bg-[rgba(15,23,42,0.6)] text-gray-200 hover:border-[rgba(99,102,241,0.65)] hover:bg-[rgba(99,102,241,0.14)] hover:-translate-y-px hover:shadow-[0_8px_18px_rgba(0,0,0,0.3)]",
-                    ].join(" ")}
                     onClick={() => handleOptionSelect(currentStep.id, option)}
+                    className={[
+                      "flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left text-[15px] transition-all duration-150",
+                      isSelected
+                        ? "border-accent bg-accent-soft font-semibold text-accent"
+                        : "border-line bg-subtle font-medium text-ink hover:border-ink/25",
+                    ].join(" ")}
                   >
                     {option}
+                    {isSelected && <Check />}
                   </button>
                 );
               })}
@@ -429,154 +480,144 @@ function DreamCarForm() {
 
           {/* Birthdate */}
           {currentStep.type === "birthDate" && (
-            <div className="flex items-end gap-3">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[13px] text-gray-400 font-medium">Month</span>
-                <select className={`${selectCls} !pb-2 !pr-3 text-[16px]`} value={formState.birthDate.month} onChange={(e) => updateBirthDate("month", e.target.value)}>
+            <div className="grid grid-cols-[1fr_1fr_1.3fr] gap-2.5">
+              <label className="flex flex-col gap-1.5">
+                <span className={labelCls}>Month</span>
+                <select className={selectCls} value={formState.birthDate.month} onChange={(e) => updateBirthDate("month", e.target.value)}>
                   <option value="">MM</option>
-                  <option value="1">01</option><option value="2">02</option><option value="3">03</option>
-                  <option value="4">04</option><option value="5">05</option><option value="6">06</option>
-                  <option value="7">07</option><option value="8">08</option><option value="9">09</option>
-                  <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={String(m)}>{String(m).padStart(2, "0")}</option>
+                  ))}
                 </select>
-              </div>
-              <span className="text-[22px] text-gray-500 pb-1.5">/</span>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[13px] text-gray-400 font-medium">Day</span>
-                <select className={`${selectCls} !pb-2 !pr-3 text-[16px]`} value={formState.birthDate.day} onChange={(e) => updateBirthDate("day", e.target.value)}>
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={labelCls}>Day</span>
+                <select className={selectCls} value={formState.birthDate.day} onChange={(e) => updateBirthDate("day", e.target.value)}>
                   <option value="">DD</option>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                     <option key={day} value={day}>{String(day).padStart(2, "0")}</option>
                   ))}
                 </select>
-              </div>
-              <span className="text-[22px] text-gray-500 pb-1.5">/</span>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[13px] text-gray-400 font-medium">Year</span>
-                <select className={`${selectCls} !pb-2 !pr-3 text-[16px]`} value={formState.birthDate.year} onChange={(e) => updateBirthDate("year", e.target.value)}>
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={labelCls}>Year</span>
+                <select className={selectCls} value={formState.birthDate.year} onChange={(e) => updateBirthDate("year", e.target.value)}>
                   <option value="">YYYY</option>
                   {Array.from({ length: new Date().getFullYear() - 1940 + 1 }, (_, i) => 1940 + i)
                     .reverse().map((year) => <option key={year} value={year}>{year}</option>)}
                 </select>
-              </div>
+              </label>
             </div>
           )}
 
           {/* Address */}
           {currentStep.type === "address" && (
             <div className="grid gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-[0.06em] text-gray-400">Street address</label>
-                <div className="relative">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="Start typing your address"
-                    value={address}
-                    onChange={(e) => { setAddress(e.target.value); updateField("address", e.target.value); }}
-                    onFocus={() => { if (addressSuggestions.length > 0) setShowAddressSuggestions(true); }}
+              <div className="relative">
+                <input
+                  className={inputCls}
+                  type="text"
+                  aria-label="Street address"
+                  placeholder="Start typing your address"
+                  value={address}
+                  onChange={(e) => { setAddress(e.target.value); updateField("address", e.target.value); }}
+                  onFocus={() => { if (addressSuggestions.length > 0) setShowAddressSuggestions(true); }}
+                />
+                {isAddressSearching && (
+                  <div
+                    aria-hidden="true"
+                    className="addr-spinner pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 rounded-full border-2 border-line border-r-accent border-t-accent"
                   />
-                  {isAddressSearching && (
-                    <div
-                      aria-hidden="true"
-                      className="addr-spinner absolute top-1/2 right-3 w-3.5 h-3.5 rounded-full border-2 border-[rgba(148,163,184,0.4)] border-t-blue-400 border-r-blue-400 pointer-events-none"
-                    />
-                  )}
-                  {showAddressSuggestions && (addressSuggestions.length > 0 || isAddressSearching) && (
-                    <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[rgba(15,23,42,0.98)] rounded-xl border border-[rgba(148,163,184,0.5)] shadow-[0_20px_40px_rgba(0,0,0,0.5)] max-h-60 overflow-y-auto z-20">
-                      {isAddressSearching && (
-                        <div className="px-3 py-2.5 text-xs text-gray-400">Searching addresses...</div>
-                      )}
-                      {addressSuggestions.map((suggestion) => (
-                        <button
-                          key={suggestion.id}
-                          type="button"
-                          className="w-full px-3 py-2.5 bg-transparent border-0 text-left cursor-pointer flex flex-col gap-0.5 text-[13px] text-gray-200 hover:bg-[rgba(37,99,235,0.28)]"
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            setAddress(suggestion.formatted);
-                            updateField("address", suggestion.formatted);
-                            setShowAddressSuggestions(false);
-                            setAddressSuggestions([]);
-                          }}
-                        >
-                          <span className="font-semibold">{suggestion.primary}</span>
-                          {suggestion.secondary && (
-                            <span className="text-[11px] text-gray-400">{suggestion.secondary}</span>
-                          )}
-                        </button>
-                      ))}
-                      <div className="px-3 pb-2 pt-1.5 border-t border-[rgba(31,41,55,0.9)] text-[10px] text-gray-500 text-right">
-                        Powered by Geoapify &amp; OpenStreetMap
-                      </div>
+                )}
+                {showAddressSuggestions && (addressSuggestions.length > 0 || isAddressSearching) && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-60 overflow-y-auto rounded-xl border border-line bg-surface shadow-[0_20px_40px_-12px_rgba(21,23,27,0.25)]">
+                    {isAddressSearching && (
+                      <div className="px-3 py-2.5 text-xs text-muted">Searching…</div>
+                    )}
+                    {addressSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.id}
+                        type="button"
+                        className="flex w-full flex-col gap-0.5 border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-ink hover:bg-accent-soft"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          setAddress(suggestion.formatted);
+                          updateField("address", suggestion.formatted);
+                          setShowAddressSuggestions(false);
+                          setAddressSuggestions([]);
+                        }}
+                      >
+                        <span className="font-medium">{suggestion.primary}</span>
+                        {suggestion.secondary && (
+                          <span className="text-[12px] text-muted">{suggestion.secondary}</span>
+                        )}
+                      </button>
+                    ))}
+                    <div className="border-t border-line px-3 pb-2 pt-1.5 text-right text-[10px] text-muted/70">
+                      Powered by Geoapify &amp; OpenStreetMap
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-[0.06em] text-gray-400">Apartment / Unit (optional)</label>
-                <input className={inputCls} type="text" placeholder="Apt, Unit, Suite" value={formState.apartment} onChange={(e) => updateField("apartment", e.target.value)} />
-              </div>
+              <input className={inputCls} type="text" aria-label="Apartment or unit" placeholder="Apt / unit (optional)" value={formState.apartment} onChange={(e) => updateField("apartment", e.target.value)} />
             </div>
           )}
 
           {/* Name */}
           {currentStep.type === "name" && (
-            <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-[10px]">
-              <input className={inputCls} type="text" placeholder="First name" value={formState.firstName} onChange={(e) => updateField("firstName", e.target.value)} />
-              <input className={inputCls} type="text" placeholder="Last name" value={formState.lastName} onChange={(e) => updateField("lastName", e.target.value)} />
+            <div className="grid grid-cols-2 gap-2.5 max-sm:grid-cols-1">
+              <input className={inputCls} type="text" autoComplete="given-name" placeholder="First name" value={formState.firstName} onChange={(e) => updateField("firstName", e.target.value)} />
+              <input className={inputCls} type="text" autoComplete="family-name" placeholder="Last name" value={formState.lastName} onChange={(e) => updateField("lastName", e.target.value)} />
             </div>
           )}
 
           {/* Email */}
           {currentStep.type === "email" && (
-            <input className={inputCls} type="email" placeholder="you@example.com" value={formState.email} onChange={(e) => updateField("email", e.target.value)} />
+            <input className={inputCls} type="email" autoComplete="email" placeholder="you@example.com" value={formState.email} onChange={(e) => updateField("email", e.target.value)} />
           )}
 
           {/* Phone */}
           {currentStep.type === "phone" && (
-            <input className={inputCls} type="tel" placeholder="Phone number" value={formState.phone} onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} />
+            <input className={`${inputCls} tabular-nums`} type="tel" autoComplete="tel" inputMode="numeric" placeholder="613 555 0123" value={formState.phone} onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} />
           )}
 
-          {/* Call Schedule */}
+          {/* Call schedule */}
           {currentStep.type === "callSchedule" && (
-            <div className="flex flex-col gap-4">
-              {/* Calendar */}
-              <div className="bg-[rgba(2,6,23,0.5)] rounded-2xl border border-[rgba(148,163,184,0.15)] p-4">
-                {/* Month navigation */}
-                <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-5">
+              <div className="rounded-2xl border border-line p-4">
+                <div className="mb-3 flex items-center justify-between">
                   <button
                     type="button"
+                    aria-label="Previous month"
                     onClick={() => {
                       if (calViewMonth === 0) { setCalViewMonth(11); setCalViewYear((y) => y - 1); }
                       else setCalViewMonth((m) => m - 1);
                     }}
                     disabled={calViewYear === todayMidnight.getFullYear() && calViewMonth === todayMidnight.getMonth()}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="15 18 9 12 15 6" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><polyline points="15 18 9 12 15 6" /></svg>
                   </button>
-                  <span className="text-sm font-semibold text-gray-200">
+                  <span className="text-[15px] font-semibold text-ink">
                     {new Date(calViewYear, calViewMonth).toLocaleString("default", { month: "long", year: "numeric" })}
                   </span>
                   <button
                     type="button"
+                    aria-label="Next month"
                     onClick={() => {
                       if (calViewMonth === 11) { setCalViewMonth(0); setCalViewYear((y) => y + 1); }
                       else setCalViewMonth((m) => m + 1);
                     }}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:bg-white/10 transition-colors cursor-pointer"
+                    className="grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-subtle hover:text-ink"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="9 18 15 12 9 6" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><polyline points="9 18 15 12 9 6" /></svg>
                   </button>
                 </div>
-                {/* Day of week headers */}
-                <div className="grid grid-cols-7 mb-1">
-                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                    <div key={d} className="text-center text-[11px] font-medium text-gray-500 py-1">{d}</div>
+                <div className="mb-1 grid grid-cols-7">
+                  {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                    <div key={i} className="py-1 text-center text-[12px] text-muted">{d}</div>
                   ))}
                 </div>
-                {/* Day cells */}
                 <div className="grid grid-cols-7 gap-y-1">
                   {(() => {
                     const firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
@@ -589,6 +630,7 @@ function DreamCarForm() {
                       const dateStr = `${calViewYear}-${String(calViewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                       const cellDate = new Date(calViewYear, calViewMonth, day);
                       const isPast = cellDate < todayMidnight;
+                      const isToday = cellDate.getTime() === todayMidnight.getTime();
                       const isSelected = formState.callDate === dateStr;
                       return (
                         <button
@@ -597,12 +639,13 @@ function DreamCarForm() {
                           disabled={isPast}
                           onClick={() => { updateField("callDate", dateStr); updateField("callTime", ""); }}
                           className={[
-                            "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all duration-100",
+                            "mx-auto grid h-9 w-9 place-items-center rounded-full text-[14px] tabular-nums transition-colors duration-100",
                             isSelected
-                              ? "bg-indigo-500 text-white font-bold shadow-[0_0_0_3px_rgba(99,102,241,0.35)]"
+                              ? "bg-accent font-semibold text-white"
                               : isPast
-                              ? "text-gray-600 cursor-not-allowed"
-                              : "text-gray-200 hover:bg-white/10 cursor-pointer font-medium",
+                              ? "cursor-not-allowed text-line"
+                              : "text-ink hover:bg-subtle",
+                            isToday && !isSelected ? "font-semibold text-accent" : "",
                           ].join(" ")}
                         >
                           {day}
@@ -612,91 +655,130 @@ function DreamCarForm() {
                   })()}
                 </div>
               </div>
-              {/* Time slots */}
               {formState.callDate && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs uppercase tracking-[0.06em] text-gray-400">Pick a time</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {TIME_SLOTS.map((slot) => {
-                      const isSelected = formState.callTime === slot;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => updateField("callTime", slot)}
-                          className={[
-                            "border py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-150",
-                            isSelected
-                              ? "border-indigo-500 bg-gradient-to-br from-indigo-700 to-indigo-500 text-white shadow-[0_6px_16px_rgba(99,102,241,0.4)]"
-                              : "border-[rgba(148,163,184,0.25)] bg-[rgba(15,23,42,0.5)] text-gray-300 hover:border-[rgba(99,102,241,0.5)] hover:bg-[rgba(99,102,241,0.1)] hover:-translate-y-px",
-                          ].join(" ")}
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="grid animate-step-in grid-cols-3 gap-2">
+                  {TIME_SLOTS.map((slot) => {
+                    const isSelected = formState.callTime === slot;
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => updateField("callTime", slot)}
+                        className={[
+                          "rounded-xl border py-2.5 text-[14px] tabular-nums transition-colors duration-150",
+                          isSelected
+                            ? "border-accent bg-accent-soft font-semibold text-accent"
+                            : "border-line bg-subtle text-ink hover:border-ink/25",
+                        ].join(" ")}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-between items-center gap-[10px] mt-1">
-            <button
-              type="button"
-              className="flex-none rounded-xl px-4 py-3 border border-[rgba(148,163,184,0.3)] bg-[rgba(15,23,42,0.65)] text-gray-200 font-bold text-sm cursor-pointer transition-[background,transform] duration-150 hover:bg-[rgba(15,23,42,0.85)] hover:-translate-y-px disabled:opacity-40 disabled:cursor-not-allowed"
-              onClick={goBack}
-              disabled={stepIndex === 0}
-            >
-              Go back
-            </button>
-            <div className="flex gap-2 items-center">
-              {currentStep.skippable && (
-                <button
-                  type="button"
-                  className="rounded-xl px-4 py-3 border border-[rgba(148,163,184,0.25)] bg-transparent text-gray-400 font-semibold text-sm cursor-pointer transition-[color,border-color] duration-150 hover:text-gray-200 hover:border-[rgba(148,163,184,0.5)]"
-                  onClick={handleSkip}
-                >
-                  Skip
-                </button>
-              )}
-              {stepIndex < totalSteps - 1 && (
-                <button type="button" className={nextBtnCls} onClick={goNext} disabled={!canGoNext}>
-                  Continue
-                </button>
-              )}
-              {stepIndex === totalSteps - 1 && (
-                <button type="button" className={nextBtnCls} onClick={handleSubmit} disabled={!canGoNext}>
-                  Submit
-                </button>
-              )}
-            </div>
+        {/* Actions */}
+        <div className="mt-8 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={stepIndex === 0}
+            className="inline-flex items-center gap-1.5 py-3 text-[15px] font-medium text-muted transition-colors hover:text-ink disabled:invisible"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+            Back
+          </button>
+          <div className="flex items-center gap-5">
+            {currentStep.skippable && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="text-[15px] font-medium text-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
+              >
+                Skip
+              </button>
+            )}
+            {stepIndex < totalSteps - 1 && (
+              <button type="button" className={primaryBtnCls} onClick={goNext} disabled={!canGoNext}>
+                Continue
+              </button>
+            )}
+            {stepIndex === totalSteps - 1 && (
+              <button type="button" className={primaryBtnCls} onClick={handleSubmit} disabled={!canGoNext || isSubmitting} aria-busy={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    Sending
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
+                  </>
+                ) : submitError ? (
+                  "Try again"
+                ) : (
+                  "Book my call"
+                )}
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Submit failed: keep their answers, offer a retry and other ways to reach us */}
+        {submitError && stepIndex === totalSteps - 1 && (
+          <div role="alert" className="mt-5 animate-step-in rounded-2xl bg-red-50 p-4 text-[14px]">
+            <p className="font-semibold text-red-700">We couldn&apos;t send your request.</p>
+            <p className="mt-1 text-red-700/80">Try again, or reach us directly:</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={`https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(buildWhatsappMessage(getSubmission()))}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-full bg-[#25D366] px-4 py-2 text-[13px] font-semibold text-[#052e16]"
+              >
+                WhatsApp
+              </a>
+              <a
+                href={SITE.phoneHref}
+                className="inline-flex items-center rounded-full border border-red-200 bg-white px-4 py-2 text-[13px] font-semibold text-ink"
+              >
+                Call {SITE.phoneDisplay}
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Success overlay */}
       {showSuccess && (
-        <div className="fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(15,23,42,0.75),rgba(2,6,23,0.9))] flex items-center justify-center z-50">
-          <div className="bg-[linear-gradient(145deg,#020617_0%,#0f172a_40%,#1d4ed8_100%)] rounded-[20px] px-[22px] py-6 w-[min(92vw,360px)] flex flex-col gap-3 text-left border border-[rgba(129,140,248,0.6)] shadow-[0_26px_70px_rgba(15,23,42,0.95)] animate-success-pop">
-            <div className="text-[17px] font-bold text-gray-50">Thanks! We&apos;ve got your answers.</div>
-            <p className="text-sm text-[#cbd5f5]">We&apos;ll review everything and get back to you shortly.</p>
-            <a
-              className="inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-br from-green-500 to-green-400 text-[#052e16] font-bold no-underline text-sm shadow-[0_14px_28px_rgba(34,197,94,0.4)] transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[0_18px_32px_rgba(34,197,94,0.5)]"
-              href={`https://wa.me/16134006796?text=${encodeURIComponent(whatsappMessage)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Chat on WhatsApp
-            </a>
-            <button
-              type="button"
-              className="border border-[rgba(148,163,184,0.3)] bg-[rgba(15,23,42,0.75)] px-3 py-2.5 rounded-xl font-semibold text-sm text-gray-200 cursor-pointer transition-[transform,background] duration-150 hover:bg-[rgba(15,23,42,0.92)] hover:-translate-y-px"
-              onClick={handleReset}
-            >
-              All set
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
+          <div className="w-[min(92vw,380px)] animate-success-pop rounded-[28px] bg-surface p-7 text-center shadow-[0_30px_80px_-20px_rgba(21,23,27,0.45)]">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-accent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <h3 className="mt-5 text-[24px] font-semibold tracking-tight text-ink">You&apos;re all set</h3>
+            <p className="mt-2 text-[15px] text-muted">
+              {formState.callDate && formState.callTime
+                ? `We'll call you ${new Date(`${formState.callDate}T00:00`).toLocaleDateString("default", { weekday: "long", month: "short", day: "numeric" })} at ${formState.callTime}.`
+                : "We'll be in touch shortly."}
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <a
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-3 text-[15px] font-semibold text-[#052e16] transition-[filter] hover:brightness-105"
+                href={`https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Chat on WhatsApp
+              </a>
+              <button
+                type="button"
+                className="rounded-full px-4 py-3 text-[15px] font-medium text-muted transition-colors hover:text-ink"
+                onClick={handleReset}
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

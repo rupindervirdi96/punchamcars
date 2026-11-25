@@ -17,9 +17,8 @@ const ChevronRight = () => (
 /* ─── Carfax badge ───────────────────────────────────────────── */
 function CarfaxBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-semibold
-      bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
-      rounded-full px-3 py-1 whitespace-nowrap">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full
+      bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-700">
       <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
         <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm11.03-2.47a.75.75 0 0 1 0 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-1.5-1.5a.75.75 0 1 1 1.06-1.06l.97.97 2.97-2.97a.75.75 0 0 1 1.06 0Z" />
       </svg>
@@ -31,8 +30,8 @@ function CarfaxBadge() {
 /* ─── Info pill ──────────────────────────────────────────────── */
 function InfoPill({ icon, label }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-slate-300
-      bg-white/5 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full
+      bg-subtle px-3 py-1.5 text-[12px] text-muted">
       {icon}
       {label}
     </span>
@@ -41,7 +40,20 @@ function InfoPill({ icon, label }) {
 
 /* ─── Car card with infinite-clone carousel ─────────────────── */
 export default function CarCard({ car }) {
-  const photos = car.Photos || [];
+  // Support both static photo arrays (dummy data) and async Drive folder loading
+  const [drivePhotos, setDrivePhotos] = useState(null);
+  const folderId = car.googleDriveFolder || car.googlePhotosAlbumIdVal;
+
+  useEffect(() => {
+    if (car.Photos?.length || !folderId) return;
+    fetch(`/api/drive/photos/${folderId}`)
+      .then((r) => r.json())
+      .then((urls) => setDrivePhotos(Array.isArray(urls) ? urls : []))
+      .catch(() => setDrivePhotos([]));
+  }, [car.Photos, folderId]);
+
+  const photos = car.Photos?.length ? car.Photos : (drivePhotos ?? []);
+  const photosLoading = !car.Photos?.length && folderId && drivePhotos === null;
   const total = photos.length;
 
   /*
@@ -118,13 +130,13 @@ export default function CarCard({ car }) {
   }, [skipTransition]);
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-[rgba(15,23,42,0.75)] border border-white/10
-      shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm flex flex-col
-      transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
+    <div className="flex flex-col overflow-hidden rounded-[24px] border border-line bg-surface
+      transition-[transform,box-shadow] duration-200
+      hover:-translate-y-1 hover:shadow-[0_24px_50px_-24px_rgba(21,23,27,0.3)]">
 
       {/* ── Carousel ──────────────────────────────────────────── */}
       <div
-        className="relative w-full aspect-[4/3] bg-black select-none overflow-x-hidden"
+        className="relative w-full aspect-[4/3] bg-subtle select-none overflow-x-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -180,6 +192,13 @@ export default function CarCard({ car }) {
           </>
         )}
 
+        {/* Loading placeholder while Drive photos are fetching */}
+        {photosLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-subtle">
+            <div className="w-6 h-6 border-2 border-line border-t-accent rounded-full animate-spin" />
+          </div>
+        )}
+
         {/* Dot indicators — scoped to the 84 % slide width */}
         {total > 1 && (
           <div className="flex w-[84%] justify-between absolute -bottom-2 left-[8%] z-10 gap-1">
@@ -190,8 +209,8 @@ export default function CarCard({ car }) {
                 aria-label={`Photo ${i + 1}`}
                 className={`flex-1 h-1.5 rounded-full transition-all duration-200
                   ${i === realIndex
-                    ? "bg-white"
-                    : "bg-white/50 hover:bg-white/75"}`}
+                    ? "bg-accent"
+                    : "bg-ink/15 hover:bg-ink/30"}`}
               />
             ))}
           </div>
@@ -199,8 +218,8 @@ export default function CarCard({ car }) {
 
         {/* Photo counter badge */}
         {total > 1 && (
-          <span className="absolute top-2 right-[calc(8%+8px)] text-[11px] font-medium
-            bg-black/60 text-white rounded-full px-2 py-0.5 backdrop-blur-sm z-10">
+          <span className="absolute top-2 right-[calc(8%+8px)] z-10 rounded-full bg-white/85
+            px-2 py-0.5 text-[11px] font-medium tabular-nums text-ink backdrop-blur-sm">
             {realIndex + 1}/{total}
           </span>
         )}
@@ -211,67 +230,77 @@ export default function CarCard({ car }) {
         {/* Info pills row */}
         <div className="flex flex-wrap gap-2">
           {/* Mileage */}
-          <InfoPill
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            }
-            label={`${car.Mileage.toLocaleString()} km`}
-          />
+          {car.Mileage != null && (
+            <InfoPill
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              }
+              label={`${car.Mileage.toLocaleString()} km`}
+            />
+          )}
           {/* Transmission */}
-          <InfoPill
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                <rect x="3" y="3" width="4" height="4" rx="1" />
-                <rect x="10" y="3" width="4" height="4" rx="1" />
-                <rect x="17" y="3" width="4" height="4" rx="1" />
-                <rect x="10" y="10" width="4" height="4" rx="1" />
-                <rect x="10" y="17" width="4" height="4" rx="1" />
-                <line x1="12" y1="7" x2="12" y2="10" />
-                <line x1="5" y1="7" x2="12" y2="10" />
-                <line x1="19" y1="7" x2="12" y2="10" />
-                <line x1="12" y1="14" x2="12" y2="17" />
-              </svg>
-            }
-            label={car.Transmission}
-          />
+          {car.Transmission && (
+            <InfoPill
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <rect x="3" y="3" width="4" height="4" rx="1" />
+                  <rect x="10" y="3" width="4" height="4" rx="1" />
+                  <rect x="17" y="3" width="4" height="4" rx="1" />
+                  <rect x="10" y="10" width="4" height="4" rx="1" />
+                  <rect x="10" y="17" width="4" height="4" rx="1" />
+                  <line x1="12" y1="7" x2="12" y2="10" />
+                  <line x1="5" y1="7" x2="12" y2="10" />
+                  <line x1="19" y1="7" x2="12" y2="10" />
+                  <line x1="12" y1="14" x2="12" y2="17" />
+                </svg>
+              }
+              label={car.Transmission}
+            />
+          )}
           {/* Year */}
-          <InfoPill
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            }
-            label={String(car.Year)}
-          />
+          {car.Year != null && (
+            <InfoPill
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              }
+              label={String(car.Year)}
+            />
+          )}
           {/* Price */}
-          <InfoPill
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                <line x1="12" y1="1" x2="12" y2="23" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            }
-            label={`$${car.Price.toLocaleString()}`}
-          />
+          {car.Price != null && (
+            <InfoPill
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              }
+              label={`$${car.Price.toLocaleString()}`}
+            />
+          )}
         </div>
 
         {/* Car name + carfax row */}
         <div className="flex items-end justify-between gap-2 mt-auto">
           <div>
-            <p className="text-white font-semibold text-base leading-snug">
-              {car.Year} {car.Brand} {car.Model}
+            <p className="text-[17px] font-semibold leading-snug text-ink">
+              {car.Year || car.year} {car.Brand || car.make} {car.Model || car.model}
             </p>
-            <p className="text-slate-400 text-xs mt-0.5">{car.BodyType}</p>
+            {(car.BodyType || car.status) && (
+              <p className="mt-0.5 text-[13px] capitalize text-muted">{String(car.BodyType || car.status).toLowerCase().replace(/_/g, " ")}</p>
+            )}
           </div>
           {car.CarfaxVerified && <CarfaxBadge />}
         </div>
